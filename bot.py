@@ -44,7 +44,10 @@ def webhook():
                 logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
                 
                 # Формируем текст для ответа
-                response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
+                response_text = f"<p style='text-align: center;'>Здравствуйте, {user_name}!</p>" \
+                f"<p style='text-align: center;'>Ваш телеграм ID: {user_id}.</p>" \
+                f"<p style='text-align: center;'>Вы нажали: {text}</p>"
+
 
                 # Создаем inline кнопку с web_app для открытия приложения
                 reply_markup = {
