@@ -38,9 +38,16 @@ def webhook():
             text = data["message"]["text"]
             if text == "/start":
                 chat_id = data["message"]["chat"]["id"]
-                logger.info(f"Sending reply to chat_id: {chat_id}")
+                user_name = data["message"]["from"].get("username", "неизвестно")
+                user_id = data["message"]["from"]["id"]
+                logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
+                
+                # Формируем ответ с именем пользователя и ссылкой на приложение
+                response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
+                response_text += f"Перейди по ссылке, чтобы открыть приложение: [Открыть приложение](https://web-production-aa772.up.railway.app)"
+
                 # Отправляем ответ на команду /start
-                send_message(chat_id, "Привет, я бот!")
+                send_message(chat_id, response_text)
 
         return "OK", 200
     except Exception as e:
@@ -50,7 +57,7 @@ def webhook():
 def send_message(chat_id, text):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        params = {'chat_id': chat_id, 'text': text}
+        params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
@@ -61,5 +68,3 @@ def send_message(chat_id, text):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
-
-
