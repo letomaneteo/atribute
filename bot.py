@@ -1,7 +1,6 @@
 from flask import Flask, request
 from telegram import Bot
 import logging
-import asyncio
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +18,7 @@ bot = Bot(token=TOKEN)
 # Установка вебхука
 def set_webhook():
     try:
-        webhook_info = asyncio.run(bot.set_webhook(url=WEBHOOK_URL))
+        webhook_info = bot.set_webhook(url=WEBHOOK_URL)
         logger.info(f"Webhook set successfully: {webhook_info}")
     except Exception as e:
         logger.error(f"Error setting webhook: {e}")
@@ -38,8 +37,8 @@ def webhook():
             if text == "/start":
                 chat_id = data["message"]["chat"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id}")
-                # Используем asyncio.run для ожидания асинхронного вызова
-                asyncio.run(bot.send_message(chat_id=chat_id, text="Привет, я бот!"))
+                # Синхронно отправляем сообщение
+                bot.send_message(chat_id=chat_id, text="Привет, я бот!")
 
         return "OK", 200
     except Exception as e:
