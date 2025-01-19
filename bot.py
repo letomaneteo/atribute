@@ -5,14 +5,15 @@ from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler
+import asyncio
 
 # Настройки
 DB_PATH = "telegram.db"
 TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
 if not TOKEN:
-    raise ValueError("Переменная окружения BOT_TOKEN не задана!")  # Telegram токен через переменные окружения
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Публичный URL для вебхука Telegram
-PORT = int(os.getenv("PORT", 8080))  # Порт приложения Flask на Railway
+    raise ValueError("Переменная окружения BOT_TOKEN не задана!")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+PORT = int(os.getenv("PORT", 8080))
 
 app = Flask(__name__)
 
@@ -32,7 +33,7 @@ def init_db():
         conn.commit()
 
 # Telegram обработчик команды /start
-def start(update: Update, context):
+async def start(update: Update, context):
     user = update.effective_user
     username = user.username or user.first_name
 
@@ -50,7 +51,7 @@ def start(update: Update, context):
             """, (user.id, username, 50, 0, next_points_time.isoformat()))
             conn.commit()
 
-    update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
+    await update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
 
 # Flask маршрут для API
 @app.route('/get_user', methods=['GET'])
@@ -76,15 +77,10 @@ def get_user():
 
 # Flask маршрут для Telegram вебхука
 @app.route(f"/{TOKEN}", methods=['POST'])
-def webhook():
+async def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
     application.update_queue.put(update)
     return "OK", 200
-
-# Flask маршрут для проверки статуса
-@app.route("/", methods=["GET"])
-def index():
-    return "Сервер работает!", 200
 
 # Планировщик для обновления очков
 def update_points_job():
@@ -93,7 +89,7 @@ def update_points_job():
         cursor = conn.cursor()
         cursor.execute("""
         SELECT id FROM users
-        WHERE next_points_time IS NOT NULL AND next_points_time <= ? 
+        WHERE next_points_time IS NOT NULL AND next_points_time <= ?
         """, (current_time,))
         user_ids = cursor.fetchall()
 
@@ -115,7 +111,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("start", start))
 
     # Установка вебхука
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+    application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
 
     # Запуск планировщика
     scheduler = BackgroundScheduler()
