@@ -72,7 +72,7 @@ def webhook():
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
-def send_message(chat_id, text, reply_markup=None):
+def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
