@@ -1,17 +1,13 @@
-import asyncio
-import threading
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime, timedelta
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CommandHandler, Dispatcher
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 
-def start_bot():
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    application.run_polling()
 # Настройки
 DB_PATH = "telegram.db"
 app = Flask(__name__)
@@ -179,6 +175,20 @@ def get_user():
 
         return jsonify({"error": "Пользователь не найден"}), 404
 
+# Установка вебхука
+@app.route('/set_webhook', methods=['GET'])
+def set_webhook():
+    url = "https://flask-production-b6fb.up.railway.app/webhook"
+    application.bot.set_webhook(url)
+    return jsonify({"status": "success", "message": "Webhook set successfully"}), 200
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data(as_text=True)
+    update = Update.de_json(json_str, application.bot)
+    application.process_update(update)
+    return 'ok', 200
+
 if __name__ == "__main__":
     init_db()
 
@@ -190,7 +200,6 @@ if __name__ == "__main__":
     # Запуск Telegram-бота
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
-    threading.Thread(target=start_bot, daemon=True).start()
 
     # Запуск Flask-сервера
     app.run(host="0.0.0.0", port=8080)
