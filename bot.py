@@ -8,6 +8,7 @@ from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
+import json
 
 # Настройки
 DB_PATH = "telegram.db"
@@ -175,6 +176,19 @@ def get_user():
             }), 200
 
         return jsonify({"error": "Пользователь не найден"}), 404
+
+# Обработчик для вебхука
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    try:
+        json_str = request.get_data(as_text=True)
+        logging.info(f"Received webhook payload: {json_str}")
+        update = Update.de_json(json.loads(json_str), application.bot)
+        application.process_update(update)
+        return '', 200
+    except Exception as e:
+        logging.error(f"Ошибка при обработке вебхука: {e}")
+        return '', 500
 
 if __name__ == "__main__":
     init_db()
