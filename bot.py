@@ -54,19 +54,19 @@ def webhook():
                     "inline_keyboard": [
                         [
                             {
-                                "text": "Смотреть 3D модели",
+                                "text": "Смотреть интерактивные 3D модели",
                                 "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Ссылка на приложение
                             }
                         ],
                         [
                             {
-                                "text": "Перейти на сайт",
+                                "text": "Все о web-анимации",
                                 "url": "https://example.com"  # Ссылка на внешний ресурс
                             }
                         ],
                         [
                             {
-                                "text": "Третья кнопка",
+                                "text": "Поиграть",
                                 "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Callback для обработки
                             }
                         ]
