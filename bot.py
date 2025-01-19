@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, WebhookHandler
+from telegram.ext import Application, CommandHandler
 
 # Настройки
 DB_PATH = "telegram.db"
@@ -30,7 +30,7 @@ def init_db():
         conn.commit()
 
 # Telegram обработчик команды /start
-async def start(update: Update, context):
+def start(update: Update, context):
     user = update.effective_user
     username = user.username or user.first_name
 
@@ -48,7 +48,7 @@ async def start(update: Update, context):
             """, (user.id, username, 50, 0, next_points_time.isoformat()))
             conn.commit()
 
-    await update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
+    update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
 
 # Flask маршрут для API
 @app.route('/get_user', methods=['GET'])
@@ -91,7 +91,7 @@ def update_points_job():
         cursor = conn.cursor()
         cursor.execute("""
         SELECT id FROM users
-        WHERE next_points_time IS NOT NULL AND next_points_time <= ?
+        WHERE next_points_time IS NOT NULL AND next_points_time <= ? 
         """, (current_time,))
         user_ids = cursor.fetchall()
 
