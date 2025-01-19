@@ -1,10 +1,11 @@
-import os
+import asyncio
+import threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
 from datetime import datetime, timedelta
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Application, CommandHandler, Dispatcher
+from telegram.ext import Application, CommandHandler
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 
@@ -175,20 +176,6 @@ def get_user():
 
         return jsonify({"error": "Пользователь не найден"}), 404
 
-# Установка вебхука
-@app.route('/set_webhook', methods=['GET'])
-def set_webhook():
-    url = "https://flask-production-b6fb.up.railway.app/webhook"
-    application.bot.set_webhook(url)
-    return jsonify({"status": "success", "message": "Webhook set successfully"}), 200
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_str = request.get_data(as_text=True)
-    update = Update.de_json(json_str, application.bot)
-    application.process_update(update)
-    return 'ok', 200
-
 if __name__ == "__main__":
     init_db()
 
@@ -199,6 +186,10 @@ if __name__ == "__main__":
 
     # Запуск Telegram-бота
     application = Application.builder().token(TOKEN).build()
+
+    # Установка вебхука
+    application.bot.set_webhook(url="https://flask-production-b6fb.up.railway.app/webhook")
+
     application.add_handler(CommandHandler("start", start))
 
     # Запуск Flask-сервера
