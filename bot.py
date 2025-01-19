@@ -1,6 +1,7 @@
 from flask import Flask, request
 from telegram import Bot
 import logging
+import asyncio
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -15,12 +16,17 @@ WEBHOOK_URL = "https://web-production-aa772.up.railway.app/webhook"  # Прям�
 # Инициализация бота
 bot = Bot(token=TOKEN)
 
-# Установка вебхука синхронно
-try:
-    webhook_info = bot.set_webhook(url=WEBHOOK_URL)
-    logger.info(f"Webhook set successfully: {webhook_info}")
-except Exception as e:
-    logger.error(f"Error setting webhook: {e}")
+# Установка вебхука (асинхронно)
+async def set_webhook():
+    try:
+        webhook_info = await bot.set_webhook(url=WEBHOOK_URL)
+        logger.info(f"Webhook set successfully: {webhook_info}")
+    except Exception as e:
+        logger.error(f"Error setting webhook: {e}")
+
+# Запуск установки вебхука
+loop = asyncio.get_event_loop()
+loop.run_until_complete(set_webhook())
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -43,6 +49,7 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
+
 
 
 
