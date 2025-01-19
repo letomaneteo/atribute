@@ -4,7 +4,7 @@ from flask import Flask, request
 import os
 
 # Токен вашего бота
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+TOKEN = os.getenv("7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU")
 
 # Создание Flask приложения
 app = Flask(__name__)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("start", start))
 
     # Устанавливаем webhook для Telegram бота
-    webhook_url = os.getenv("WEBHOOK_URL")
+    webhook_url = "https://flask-production-b6fb.up.railway.app/webhook"
     application.bot.set_webhook(url=webhook_url)
 
     # Flask route для получения вебхуков
