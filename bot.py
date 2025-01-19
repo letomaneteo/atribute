@@ -2,6 +2,7 @@ from flask import Flask, request
 import requests
 import logging
 import json  # Добавляем модуль для преобразования в JSON
+import os  # Для работы с переменными окружения
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
