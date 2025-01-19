@@ -42,22 +42,35 @@ def webhook():
                 user_id = data["message"]["from"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
                 
-                # Формируем ответ с именем пользователя и ссылкой на приложение
+                # Формируем текст для ответа
                 response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
-                response_text += f"Перейди по ссылке, чтобы открыть приложение: [Открыть приложение](https://web-production-aa772.up.railway.app)"
 
-                # Отправляем ответ на команду /start
-                send_message(chat_id, response_text)
+                # Создаем inline кнопку с ссылкой на приложение
+                reply_markup = {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "Открыть приложение",
+                                "url": "https://letomaneteo.github.io/myweb/newpage.html"  # Ссылка на приложение
+                            }
+                        ]
+                    ]
+                }
+
+                # Отправляем ответ на команду /start с inline кнопкой
+                send_message(chat_id, response_text, reply_markup)
 
         return "OK", 200
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, reply_markup=None):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
+        if reply_markup:
+            params['reply_markup'] = reply_markup
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
