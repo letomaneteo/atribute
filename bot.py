@@ -37,7 +37,7 @@ def webhook():
             if text == "/start":
                 chat_id = data["message"]["chat"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id}")
-                # Синхронно отправляем сообщение
+                # Используем синхронную версию send_message
                 bot.send_message(chat_id=chat_id, text="Привет, я бот!")
 
         return "OK", 200
