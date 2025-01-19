@@ -10,8 +10,6 @@ import logging
 # Настройки
 DB_PATH = "telegram.db"
 TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
-if not TOKEN:
-    raise ValueError("Переменная окружения BOT_TOKEN не задана!")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.getenv("PORT", 8080))
 
@@ -36,7 +34,7 @@ def init_db():
         conn.commit()
 
 # Telegram обработчик команды /start
-async def start(update: Update, context):
+def start(update: Update, context):
     user = update.effective_user
     username = user.username or user.first_name
 
@@ -54,7 +52,7 @@ async def start(update: Update, context):
             """, (user.id, username, 50, 0, next_points_time.isoformat()))
             conn.commit()
 
-    await update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
+    update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
 
 # Flask маршрут для API
 @app.route('/get_user', methods=['GET'])
@@ -83,7 +81,7 @@ def get_user():
 def webhook():
     json_str = request.get_json(force=True)
     update = Update.de_json(json_str, bot)
-    application.update_queue.put(update)  # Теперь без asyncio
+    application.update_queue.put(update)
     return "OK", 200
 
 # Планировщик для обновления очков
