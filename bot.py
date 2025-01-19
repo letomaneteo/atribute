@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Установите ваш токен для бота
-TOKEN = config.TELEGRAM_TOKEN
-WEBHOOK_URL = config.WEBHOOK_URL
+TOKEN = os.getenv("TELEGRAM_TOKEN")  # Получаем токен из переменной окружения
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Получаем URL вебхука из переменной окружения
 
 # Установка вебхука
 def set_webhook():
