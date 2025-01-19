@@ -44,14 +44,14 @@ def webhook():
                 logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
                 
                 # Формируем текст для ответа
-                response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
+                response_text = f"Здравствуйте, {user_name}! Ваш телеграм ID: {user_id}. Вы нажали: {text}\n\n"
 
                 # Создаем inline кнопку с web_app для открытия приложения
                 reply_markup = {
                     "inline_keyboard": [
                         [
                             {
-                                "text": "Открыть приложение",
+                                "text": "Смотреть 3D интерактив",
                                 "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Ссылка на приложение
                             }
                         ]
