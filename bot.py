@@ -77,9 +77,10 @@ def get_user():
 
 # Flask маршрут для Telegram вебхука
 @app.route(f"/{TOKEN}", methods=['POST'])
-async def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    application.update_queue.put(update)
+def webhook():
+    json_str = request.get_json(force=True)
+    update = Update.de_json(json_str, bot)
+    asyncio.run(application.update_queue.put(update))
     return "OK", 200
 
 # Планировщик для обновления очков
