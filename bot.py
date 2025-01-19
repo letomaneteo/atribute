@@ -1,45 +1,33 @@
 import os
 from flask import Flask, request
-from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler
+from telegram import Bot, Update
 import logging
 
-# Инициализация Flask
 app = Flask(__name__)
 
-# Telegram токен
-TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
+# Telegram token
+TOKEN = '7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU'
+bot = Bot(token=TOKEN)
 
-# Инициализация бота
-bot = Bot(TOKEN)
-dispatcher = Dispatcher(bot, None, workers=0)
+# Установка вебхука
+webhook_url = 'https://flask-production-b6fb.up.railway.app/webhook'  # Используйте ваш реальный URL с Railway
+bot.set_webhook(url=webhook_url)
 
-# Установка логирования
-logging.basicConfig(level=logging.INFO)
-
-# Обработка команды /start
-def start(update, context):
-    update.message.reply_text("Привет, я бот!")
-
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
-
-# Вебхук для Telegram
+# Вебхук для обработки запросов от Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    json_str = request.get_data().decode("UTF-8")
-    update = Update.de_json(json_str, bot)
-    dispatcher.process_update(update)
-    return 'OK', 200
+    try:
+        # Получаем обновление от Telegram
+        update = Update.de_json(request.get_json(), bot)
 
-# Установка вебхука в Telegram
-def set_webhook():
-    webhook_url = "https://flask-production-b6fb.up.railway.app/webhook"  # Укажите ваш URL на Railway
-    bot.set_webhook(url=webhook_url)
+        # Ответ на сообщение
+        bot.send_message(chat_id=update.message.chat_id, text="Привет, бот работает!")
 
-if __name__ == "__main__":
-    # Устанавливаем вебхук
-    set_webhook()
+        return "OK", 200
+    except Exception as e:
+        logging.error(f"Ошибка: {e}")
+        return "Error", 500
 
-    # Запуск Flask сервера
-    app.run(host='0.0.0.0', port=8080)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8080)
+
