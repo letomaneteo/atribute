@@ -1,34 +1,45 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler
-from flask import Flask, request
 import os
+from flask import Flask, request
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, CommandHandler
+import logging
 
-# Токен вашего бота
-TOKEN = os.getenv("7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU")
-
-# Создание Flask приложения
+# Инициализация Flask
 app = Flask(__name__)
 
-async def start(update: Update, context):
-    """Отправляет сообщение при команде /start"""
-    user = update.effective_user
-    await update.message.reply_text(f"Привет, {user.first_name}! Я простой бот.")
+# Telegram токен
+TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
+
+# Инициализация бота
+bot = Bot(TOKEN)
+dispatcher = Dispatcher(bot, None, workers=0)
+
+# Установка логирования
+logging.basicConfig(level=logging.INFO)
+
+# Обработка команды /start
+def start(update, context):
+    update.message.reply_text("Привет, я бот!")
+
+start_handler = CommandHandler('start', start)
+dispatcher.add_handler(start_handler)
+
+# Вебхук для Telegram
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
+    update = Update.de_json(json_str, bot)
+    dispatcher.process_update(update)
+    return 'OK', 200
+
+# Установка вебхука в Telegram
+def set_webhook():
+    webhook_url = "https://flask-production-b6fb.up.railway.app/webhook"  # Укажите ваш URL на Railway
+    bot.set_webhook(url=webhook_url)
 
 if __name__ == "__main__":
-    # Создание Telegram бота
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-
-    # Устанавливаем webhook для Telegram бота
-    webhook_url = "https://flask-production-b6fb.up.railway.app/webhook"
-    application.bot.set_webhook(url=webhook_url)
-
-    # Flask route для получения вебхуков
-    @app.route('/webhook', methods=['POST'])
-    def webhook():
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        application.dispatcher.process_update(update)
-        return 'OK'
+    # Устанавливаем вебхук
+    set_webhook()
 
     # Запуск Flask сервера
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host='0.0.0.0', port=8080)
