@@ -1,4 +1,5 @@
 gunicorn
+requests
 flask
 flask-cors
 apscheduler
