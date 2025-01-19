@@ -46,25 +46,35 @@ def webhook():
                 
                 # Формируем текст для ответа
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
-                f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
-                f"<u>Вы нажали: {text}</u>"
+                                f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
+                                f"<u>Вы нажали: {text}</u>"
 
-                # Создаем inline кнопку с web_app для открытия приложения
+                # Создаем inline кнопки
                 reply_markup = {
                     "inline_keyboard": [
                         [
                             {
-                                "text": "Смотреть 3D интерактивные модели",
+                                "text": "✨ Смотреть 3D модели ✨",
                                 "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Ссылка на приложение
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🔗 Перейти на сайт 🔗",
+                                "url": "https://example.com"  # Ссылка на внешний ресурс
                             }
                         ]
                     ]
                 }
 
-                # Преобразуем reply_markup в строку JSON
-                reply_markup_json = json.dumps(reply_markup)
+                # Преобразуем reply_markup в строку JSON с обработкой ошибок
+                try:
+                    reply_markup_json = json.dumps(reply_markup)
+                except Exception as e:
+                    logger.error(f"Error converting reply_markup to JSON: {e}")
+                    reply_markup_json = None  # Установите значение по умолчанию
 
-                # Отправляем ответ на команду /start с inline кнопкой
+                # Отправляем ответ на команду /start с inline кнопками
                 send_message(chat_id, response_text, reply_markup_json)
 
         return "OK", 200
