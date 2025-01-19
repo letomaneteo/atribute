@@ -74,7 +74,7 @@ def webhook():
 def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
+        params = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
         if reply_markup:
             params['reply_markup'] = reply_markup  # Отправляем reply_markup как строку JSON
         response = requests.post(url, params=params)
