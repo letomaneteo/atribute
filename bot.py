@@ -8,7 +8,9 @@ from telegram.ext import Application, CommandHandler
 
 # Настройки
 DB_PATH = "telegram.db"
-TOKEN = os.getenv("7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU")  # Telegram токен через переменные окружения
+TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
+if not TOKEN:
+    raise ValueError("Переменная окружения BOT_TOKEN не задана!")  # Telegram токен через переменные окружения
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Публичный URL для вебхука Telegram
 PORT = int(os.getenv("PORT", 8080))  # Порт приложения Flask на Railway
 
