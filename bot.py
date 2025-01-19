@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request
 from apscheduler.schedulers.background import BackgroundScheduler
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler
-import asyncio
+import logging
 
 # Настройки
 DB_PATH = "telegram.db"
@@ -14,6 +14,9 @@ if not TOKEN:
     raise ValueError("Переменная окружения BOT_TOKEN не задана!")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 PORT = int(os.getenv("PORT", 8080))
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -80,12 +83,13 @@ def get_user():
 def webhook():
     json_str = request.get_json(force=True)
     update = Update.de_json(json_str, bot)
-    asyncio.run(application.update_queue.put(update))
+    application.update_queue.put(update)  # Теперь без asyncio
     return "OK", 200
 
 # Планировщик для обновления очков
 def update_points_job():
     current_time = datetime.now()
+    logging.info(f"Обновление очков, текущее время: {current_time}")  # Логирование
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -112,7 +116,11 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("start", start))
 
     # Установка вебхука
-    application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+    if WEBHOOK_URL:
+        application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+        logging.info(f"Вебхук установлен на {WEBHOOK_URL}/{TOKEN}")
+    else:
+        logging.error("WEBHOOK_URL не задан!")
 
     # Запуск планировщика
     scheduler = BackgroundScheduler()
