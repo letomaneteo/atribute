@@ -1,7 +1,6 @@
-import logging
 from flask import Flask, request
 from telegram import Bot
-from telegram.error import TelegramError
+import logging
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -16,13 +15,16 @@ WEBHOOK_URL = "https://web-production-aa772.up.railway.app/webhook"  # Прям�
 # Инициализация бота
 bot = Bot(token=TOKEN)
 
-# Установка вебхука
+# Установка вебхука синхронно
 def set_webhook():
     try:
+        # Синхронный вызов для установки вебхука
         webhook_info = bot.set_webhook(url=WEBHOOK_URL)
         logger.info(f"Webhook set successfully: {webhook_info}")
-    except TelegramError as e:
+    except Exception as e:
         logger.error(f"Error setting webhook: {e}")
+
+set_webhook()  # Устанавливаем вебхук при запуске
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -33,11 +35,10 @@ def webhook():
 
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
-            chat_id = data["message"]["chat"]["id"]
-
             if text == "/start":
+                chat_id = data["message"]["chat"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id}")
-                # Отправляем сообщение пользователю
+                # Синхронный вызов send_message
                 bot.send_message(chat_id=chat_id, text="Привет, я бот!")
 
         return "OK", 200
@@ -46,5 +47,5 @@ def webhook():
         return f"Error: {e}", 500
 
 if __name__ == '__main__':
-    set_webhook()  # Устанавливаем вебхук при запуске
     app.run(debug=True, host='0.0.0.0', port=8080)
+
