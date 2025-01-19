@@ -1,6 +1,7 @@
 from flask import Flask, request
 import requests
 import logging
+import json  # Добавляем модуль для преобразования в JSON
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -51,14 +52,17 @@ def webhook():
                         [
                             {
                                 "text": "Открыть приложение",
-                                "url": "https://letomaneteo.github.io/myweb/newpage.html"  # Ссылка на приложение
+                                "url": "https://web-production-aa772.up.railway.app"  # Ссылка на приложение
                             }
                         ]
                     ]
                 }
 
+                # Преобразуем reply_markup в строку JSON
+                reply_markup_json = json.dumps(reply_markup)
+
                 # Отправляем ответ на команду /start с inline кнопкой
-                send_message(chat_id, response_text, reply_markup)
+                send_message(chat_id, response_text, reply_markup_json)
 
         return "OK", 200
     except Exception as e:
@@ -70,7 +74,7 @@ def send_message(chat_id, text, reply_markup=None):
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
         if reply_markup:
-            params['reply_markup'] = reply_markup
+            params['reply_markup'] = reply_markup  # Отправляем reply_markup как строку JSON
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
