@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 # Установите ваш токен для бота
 TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"  # Замените на ваш токен
-WEBHOOK_URL = "https://flask-production-b6fb.up.railway.app/webhook"  # Прямая ссылка
+WEBHOOK_URL = "https://web-production-aa772.up.railway.app/webhook"  # Прямая ссылка
 
 # Инициализация бота
 bot = Bot(token=TOKEN)
