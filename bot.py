@@ -15,7 +15,7 @@ WEBHOOK_URL = "https://web-production-aa772.up.railway.app/webhook"  # Прям�
 # Инициализация бота
 bot = Bot(token=TOKEN)
 
-# Установка вебхука
+# Синхронная установка вебхука
 def set_webhook():
     try:
         webhook_info = bot.set_webhook(url=WEBHOOK_URL)
@@ -46,6 +46,8 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
+
+
 
 
 
