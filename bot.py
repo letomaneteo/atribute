@@ -4,7 +4,7 @@ from telegram import Bot, Update
 app = Flask(__name__)
 
 # Установите ваш токен для бота
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"  # Замените на ваш токен
+TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"  # Замените на ваш токен
 WEBHOOK_URL = "https://flask-production-b6fb.up.railway.app/webhook"  # Прямая ссылка
 
 # Инициализация бота
