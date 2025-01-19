@@ -1,5 +1,5 @@
 from flask import Flask, request
-from telegram import Bot
+import requests
 import logging
 
 # Настройка логирования
@@ -12,15 +12,16 @@ app = Flask(__name__)
 TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"  # Замените на ваш токен
 WEBHOOK_URL = "https://web-production-aa772.up.railway.app/webhook"  # Прямая ссылка
 
-# Инициализация бота
-bot = Bot(token=TOKEN)
-
-# Установка вебхука синхронно
+# Установка вебхука
 def set_webhook():
     try:
-        # Синхронный вызов для установки вебхука
-        webhook_info = bot.set_webhook(url=WEBHOOK_URL)
-        logger.info(f"Webhook set successfully: {webhook_info}")
+        url = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
+        params = {'url': WEBHOOK_URL}
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            logger.info("Webhook set successfully.")
+        else:
+            logger.error(f"Error setting webhook: {response.status_code} - {response.text}")
     except Exception as e:
         logger.error(f"Error setting webhook: {e}")
 
@@ -38,14 +39,27 @@ def webhook():
             if text == "/start":
                 chat_id = data["message"]["chat"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id}")
-                # Синхронный вызов send_message
-                bot.send_message(chat_id=chat_id, text="Привет, я бот!")
+                # Отправляем ответ на команду /start
+                send_message(chat_id, "Привет, я бот!")
 
         return "OK", 200
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
+def send_message(chat_id, text):
+    try:
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+        params = {'chat_id': chat_id, 'text': text}
+        response = requests.post(url, params=params)
+        if response.status_code == 200:
+            logger.info(f"Message sent to {chat_id}")
+        else:
+            logger.error(f"Error sending message: {response.status_code} - {response.text}")
+    except Exception as e:
+        logger.error(f"Error sending message: {e}")
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
+
 
