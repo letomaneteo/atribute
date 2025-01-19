@@ -34,11 +34,11 @@ def webhook():
 
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
+            chat_id = data["message"]["chat"]["id"]
+
             if text == "/start":
-                chat_id = data["message"]["chat"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id}")
-                # Используем синхронную версию send_message
-                bot.send_message(chat_id=chat_id, text="Привет, я бот!")
+                bot.send_message(chat_id=chat_id, text="Привет, я бот!")  # Синхронная отправка сообщения
 
         return "OK", 200
     except Exception as e:
@@ -47,3 +47,4 @@ def webhook():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
+
