@@ -1,25 +1,31 @@
-import os
+import asyncio
+import threading
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import sqlite3
 from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
-from apscheduler.schedulers.background import BackgroundScheduler
-from telegram import Bot, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler
+from apscheduler.schedulers.background import BackgroundScheduler
 import logging
 
+def start_bot():
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    application.run_polling()
 # Настройки
 DB_PATH = "telegram.db"
-TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-PORT = int(os.getenv("PORT", 8080))
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})  # Явно разрешаем все домены
+
+# Telegram токен
+TOKEN = "7815366595:AAGA-HPHVPqyTQn579uoeM7yPDRrf-UIdsU"
+
+# Инициализация логирования
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Инициализация базы данных
 def init_db():
+    """Создает таблицу, если её ещё нет"""
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
@@ -33,28 +39,119 @@ def init_db():
         """)
         conn.commit()
 
-# Telegram обработчик команды /start
-def start(update: Update, context):
-    user = update.effective_user
-    username = user.username or user.first_name
-
-    # Проверяем пользователя в БД
+# Проверяем, есть ли пользователь в базе данных, иначе создаем
+def get_or_create_user(user_id, username):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user.id,))
-        user_data = cursor.fetchone()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
 
-        if not user_data:
+        if not user:
             next_points_time = datetime.now() + timedelta(minutes=5)
             cursor.execute("""
-                INSERT INTO users (id, username, points, level, next_points_time)
-                VALUES (?, ?, ?, ?, ?)
-            """, (user.id, username, 50, 0, next_points_time.isoformat()))
+            INSERT INTO users (id, username, points, level, next_points_time)
+            VALUES (?, ?, ?, ?, ?)
+            """, (user_id, username, 50, 0, next_points_time.isoformat()))
+            conn.commit()
+            return {
+                "id": user_id, "username": username, "points": 50,
+                "level": 0, "next_points_time": next_points_time.isoformat()
+            }
+        else:
+            return {
+                "id": user[0], "username": user[1], "points": user[2],
+                "level": user[3], "next_points_time": user[4]
+            }
+
+# Telegram обработчик команды /start
+async def start(update: Update, context):
+    user = update.effective_user
+    chat_id = user.id
+    username = user.username or user.first_name
+
+    user_data = get_or_create_user(user.id, username)
+
+    message = f"Привет, {username}! Добро пожаловать в приложение.\n"
+    message += f"Твои очки: {user_data['points']}, уровень: {user_data['level']}."
+
+    keyboard = [
+        [InlineKeyboardButton("Перейти в приложение", web_app={"url": f"https://letomaneteo.github.io/myweb/555.html?user_id={user.id}"})]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await context.bot.send_message(chat_id=chat_id, text=message, reply_markup=reply_markup)
+
+# Функция обновления очков
+def update_user_points(user_id):
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        current_time = datetime.now()
+
+        cursor.execute("""
+        SELECT points, next_points_time, username
+        FROM users
+        WHERE id = ?
+        """, (user_id,))
+        user = cursor.fetchone()
+
+        if user:
+            points, next_points_time, username = user
+
+            if next_points_time:
+                next_points_time = datetime.fromisoformat(next_points_time)
+
+            if points == 0 and (not next_points_time or current_time >= next_points_time):
+                points = 50
+                next_points_time = current_time + timedelta(minutes=5)
+                cursor.execute("""
+                UPDATE users
+                SET points = ?, next_points_time = ?
+                WHERE id = ?
+                """, (points, next_points_time.isoformat(), user_id))
+                conn.commit()
+
+                try:
+                    application.bot.send_message(chat_id=user_id, text=f"Ваши очки были обновлены до 50, {username}!")
+                except Exception as e:
+                    logging.error(f"Ошибка при отправке сообщения пользователю {user_id}: {e}")
+
+# Задача для обновления очков
+def update_points_job():
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        current_time = datetime.now()
+
+        cursor.execute("""
+        SELECT id
+        FROM users
+        WHERE next_points_time IS NOT NULL AND next_points_time <= ?
+        """, (current_time,))
+        user_ids = cursor.fetchall()
+
+        for user_id, in user_ids:
+            update_user_points(user_id)
+
+# Flask маршруты
+@app.route('/edit_points', methods=['POST'])
+def edit_points():
+    try:
+        data = request.get_json()
+        if not data or 'user_id' not in data or 'points' not in data:
+            return jsonify({"status": "error", "message": "Данные некорректны или отсутствуют"}), 400
+
+        user_id = int(data['user_id'])
+        points = int(data['points'])
+
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE users SET points = ? WHERE id = ?", (points, user_id))
             conn.commit()
 
-    update.message.reply_text(f"Привет, {username}! Добро пожаловать в бота.")
+        return jsonify({"status": "success", "message": "Points updated successfully"}), 200
 
-# Flask маршрут для API
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/get_user', methods=['GET'])
 def get_user():
     user_id = request.args.get('user_id', type=int)
@@ -63,67 +160,37 @@ def get_user():
 
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        cursor.execute("""
+        SELECT id, username, points, level, next_points_time
+        FROM users
+        WHERE id = ?
+        """, (user_id,))
         user = cursor.fetchone()
 
-    if user:
-        return jsonify({
-            "id": user[0],
-            "username": user[1],
-            "points": user[2],
-            "level": user[3],
-            "next_points_time": user[4]
-        })
-    return jsonify({"error": "Пользователь не найден"}), 404
+        if user:
+            user_id, username, points, level, next_points_time = user
+            return jsonify({
+                "id": user_id,
+                "username": username,
+                "points": points,
+                "level": level,
+                "next_points_time": next_points_time
+            }), 200
 
-# Flask маршрут для Telegram вебхука
-@app.route(f"/{TOKEN}", methods=['POST'])
-def webhook():
-    json_str = request.get_json(force=True)
-    update = Update.de_json(json_str, bot)
-    application.update_queue.put(update)
-    return "OK", 200
-
-# Планировщик для обновления очков
-def update_points_job():
-    current_time = datetime.now()
-    logging.info(f"Обновление очков, текущее время: {current_time}")  # Логирование
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-        SELECT id FROM users
-        WHERE next_points_time IS NOT NULL AND next_points_time <= ?
-        """, (current_time,))
-        user_ids = cursor.fetchall()
-
-        for user_id, in user_ids:
-            cursor.execute("""
-            UPDATE users
-            SET points = 50, next_points_time = ?
-            WHERE id = ?
-            """, (current_time + timedelta(minutes=5), user_id))
-        conn.commit()
+        return jsonify({"error": "Пользователь не найден"}), 404
 
 if __name__ == "__main__":
-    # Инициализация БД
     init_db()
 
-    # Настройка Telegram-бота
-    bot = Bot(token=TOKEN)
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-
-    # Установка вебхука
-    if WEBHOOK_URL:
-        application.bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
-        logging.info(f"Вебхук установлен на {WEBHOOK_URL}/{TOKEN}")
-    else:
-        logging.error("WEBHOOK_URL не задан!")
-
-    # Запуск планировщика
+    # Запуск планировщика задач
     scheduler = BackgroundScheduler()
     scheduler.add_job(update_points_job, 'interval', seconds=60)
     scheduler.start()
 
-    # Запуск Flask
-    app.run(host="0.0.0.0", port=PORT)
+    # Запуск Telegram-бота
+    application = Application.builder().token(TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    threading.Thread(target=start_bot, daemon=True).start()
+
+    # Запуск Flask-сервера
+    app.run(host="0.0.0.0", port=8000)
