@@ -1,7 +1,7 @@
 from flask import Flask, request
 import requests
 import logging
-import json  # Добавляем модуль для преобразования в JSON
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -39,30 +39,18 @@ def webhook():
             text = data["message"]["text"]
             if text == "/start":
                 chat_id = data["message"]["chat"]["id"]
-                user_name = data["message"]["from"].get("username", "неизвестно")
+                user_name = data["message"]["from"]["first_name"]
                 user_id = data["message"]["from"]["id"]
-                logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
-                
-                # Формируем текст для ответа
-                response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
+                logger.info(f"Sending reply to chat_id: {chat_id}")
 
-                # Создаем inline кнопку с ссылкой на приложение
-                reply_markup = {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "Открыть приложение",
-                                "url": "https://web-production-aa772.up.railway.app"  # Ссылка на приложение
-                            }
-                        ]
-                    ]
-                }
+                # Создаем кнопку с ссылкой на ваше приложение в маленьком окне
+                keyboard = [
+                    [InlineKeyboardButton("Перейти в приложение", web_app={"url": f"https://letomaneteo.github.io/myweb/newpage.html?user_id={user_id}"})]
+                ]
+                reply_markup = InlineKeyboardMarkup(keyboard)
 
-                # Преобразуем reply_markup в строку JSON
-                reply_markup_json = json.dumps(reply_markup)
-
-                # Отправляем ответ на команду /start с inline кнопкой
-                send_message(chat_id, response_text, reply_markup_json)
+                # Отправляем ответ на команду /start с кнопкой
+                send_message(chat_id, f"Привет, {user_name}! Твой ID: {user_id}. Перейди по кнопке ниже, чтобы открыть приложение.", reply_markup=reply_markup)
 
         return "OK", 200
     except Exception as e:
@@ -72,10 +60,8 @@ def webhook():
 def send_message(chat_id, text, reply_markup=None):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
-        if reply_markup:
-            params['reply_markup'] = reply_markup  # Отправляем reply_markup как строку JSON
-        response = requests.post(url, params=params)
+        params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown', 'reply_markup': reply_markup}
+        response = requests.post(url, json=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
         else:
