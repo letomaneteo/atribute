@@ -44,14 +44,14 @@ def webhook():
                 logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
                 
                 # Формируем текст для ответа
-                response_text = f"<p style='text-align: center;'>Здравствуйте, {user_name}!</p>\n<p style='text-align: center;'>Ваш телеграм ID: {user_id}.</p>\n<p style='text-align: center;'>Вы нажали: {text}</p>"
+                response_text = f"Привет, {user_name}! Твой ID: {user_id}. Ты написал: {text}\n\n"
 
                 # Создаем inline кнопку с web_app для открытия приложения
                 reply_markup = {
                     "inline_keyboard": [
                         [
                             {
-                                "text": "Смотреть 3D интерактив",
+                                "text": "Открыть приложение",
                                 "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Ссылка на приложение
                             }
                         ]
@@ -69,19 +69,12 @@ def webhook():
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
-def send_message(chat_id, text, reply_markup=None, parse_mode=None):
+def send_message(chat_id, text, reply_markup=None):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        params = {'chat_id': chat_id, 'text': text}
-        
-        # Если есть reply_markup, добавляем его в параметры
+        params = {'chat_id': chat_id, 'text': text, 'parse_mode': 'Markdown'}
         if reply_markup:
             params['reply_markup'] = reply_markup  # Отправляем reply_markup как строку JSON
-
-        # Если указана разметка, добавляем её в параметры
-        if parse_mode:
-            params['parse_mode'] = parse_mode
-        
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
