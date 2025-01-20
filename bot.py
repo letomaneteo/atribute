@@ -55,7 +55,7 @@ def webhook():
                         [
                             {
                                 "text": "✨Смотреть интерактивные 3D модели✨",
-                                "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Ссылка на приложение
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/site.html"}  # Ссылка на приложение
                             }
                         ],
                         [
