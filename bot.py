@@ -1,8 +1,8 @@
-import os
 from flask import Flask, request
 import requests
 import logging
-import json
+import json  # Добавляем модуль для преобразования в JSON
+import os  # Для работы с переменными окружения
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -10,11 +10,10 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Переменные окружения
-TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram Bot Token
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Webhook URL
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")  # Hugging Face API Token
-HF_MODEL_URL = "https://api-inference.huggingface.co/models/gpt-neo-2.7B"  # URL вашей модели
+# Установите ваш токен для бота и Hugging Face
+TOKEN = os.getenv("TELEGRAM_TOKEN")  # Получаем токен из переменной окружения
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Получаем URL вебхука из переменной окружения
+HF_TOKEN = os.getenv("HF_TOKEN")  # Токен Hugging Face для работы с ИИ
 
 # Установка вебхука
 def set_webhook():
@@ -29,59 +28,93 @@ def set_webhook():
     except Exception as e:
         logger.error(f"Error setting webhook: {e}")
 
-set_webhook()
+set_webhook()  # Устанавливаем вебхук при запуске
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
+        # Получаем данные от Telegram
         data = request.get_json()
-        logger.debug(f"Received data: {json.dumps(data, indent=4)}")
+        logger.debug(f"Received data: {data}")  # Логируем входящие данные
 
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
             chat_id = data["message"]["chat"]["id"]
 
-            # Ответ на команды
             if text == "/start":
-                send_message(chat_id, "Привет! Напишите сообщение, и я отвечу с помощью ИИ.")
+                user_name = data["message"]["from"].get("username", "неизвестно")
+                user_id = data["message"]["from"]["id"]
+                logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
+                
+                # Формируем текст для ответа
+                response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
+                                f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
+                                f"<u>Вы нажали: {text}</u>"
+
+                # Создаем inline кнопки
+                reply_markup = {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "✨Смотреть интерактивные 3D модели✨",
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🔗Все о web-анимации🔗",
+                                "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🎮Поиграть(Победить за 22 клика)🎮",
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}
+                            }
+                        ]
+                    ]
+                }
+
+                # Преобразуем reply_markup в строку JSON
+                reply_markup_json = json.dumps(reply_markup)
+
+                # Отправляем ответ на команду /start с inline кнопками
+                send_message(chat_id, response_text, reply_markup_json)
+
             else:
-                # Обработка текста с помощью Hugging Face
-                logger.info(f"Processing text: {text}")
-                ai_response = query_hugging_face(text)
-                send_message(chat_id, ai_response)
+                # Обработка сообщения через Hugging Face
+                response_text = get_ai_response(text)
+                send_message(chat_id, response_text)
 
         return "OK", 200
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
-
-def query_hugging_face(prompt):
-    """
-    Отправляет запрос к модели Hugging Face и возвращает результат.
-    """
-    headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-    payload = {"inputs": prompt}
-    
+def get_ai_response(user_input):
+    """Отправляет запрос к Hugging Face API и возвращает ответ."""
     try:
-        response = requests.post(HF_MODEL_URL, headers=headers, json=payload)
+        url = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        payload = {"inputs": user_input}
+        response = requests.post(url, headers=headers, json=payload)
+        
         if response.status_code == 200:
-            data = response.json()
-            return data[0]["generated_text"] if isinstance(data, list) else "Ошибка обработки ответа."
+            ai_output = response.json()
+            return ai_output.get("generated_text", "Извините, я не смог ответить.")
         else:
-            logger.error(f"Error from Hugging Face API: {response.status_code} - {response.text}")
-            return "Ошибка получения ответа от ИИ."
+            logger.error(f"Error from AI API: {response.status_code} - {response.text}")
+            return "Произошла ошибка при получении ответа от ИИ."
     except Exception as e:
-        logger.error(f"Error querying Hugging Face API: {e}")
-        return "Произошла ошибка при обращении к ИИ."
+        logger.error(f"Error during AI request: {e}")
+        return "Произошла ошибка при общении с ИИ."
 
-def send_message(chat_id, text, parse_mode='HTML'):
-    """
-    Отправляет сообщение пользователю в Telegram.
-    """
+def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
+        if reply_markup:
+            params['reply_markup'] = reply_markup
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
