@@ -35,16 +35,18 @@ set_webhook()
 def webhook():
     try:
         data = request.get_json()
-        logger.debug(f"Received data: {data}")
+        logger.debug(f"Received data: {json.dumps(data, indent=4)}")
 
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
             chat_id = data["message"]["chat"]["id"]
 
+            # Ответ на команды
             if text == "/start":
                 send_message(chat_id, "Привет! Напишите сообщение, и я отвечу с помощью ИИ.")
             else:
-                # Отправляем запрос в Hugging Face
+                # Обработка текста с помощью Hugging Face
+                logger.info(f"Processing text: {text}")
                 ai_response = query_hugging_face(text)
                 send_message(chat_id, ai_response)
 
@@ -52,6 +54,7 @@ def webhook():
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
+
 
 def query_hugging_face(prompt):
     """
