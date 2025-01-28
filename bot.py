@@ -93,38 +93,40 @@ def webhook():
 
 def get_ai_response(user_input):
     try:
-        # Настраиваем запрос к HuggingFace
         huggingface_url = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
         headers = {
-            "Authorization": f"Bearer {os.getenv('HUGGINGFACE_TOKEN')}"  # Токен из переменной окружения
+            "Authorization": f"Bearer {os.getenv('HF_TOKEN')}"
         }
         payload = {"inputs": user_input}
 
-        # Отправляем запрос к API
+        # Отправляем запрос к Hugging Face API
         response = requests.post(huggingface_url, headers=headers, json=payload)
 
-        # Проверяем статус ответа
-        if response.status_code != 200:
-            logger.error(f"Error from HuggingFace API: {response.status_code} - {response.text}")
-            return "Извините, возникла ошибка при обработке вашего запроса."
+        # Логируем ответ для диагностики
+        logger.debug(f"Hugging Face Response: {response.text}")
 
-        # Обрабатываем ответ
+        # Проверяем статус код
+        if response.status_code != 200:
+            logger.error(f"Hugging Face API Error: {response.status_code} - {response.text}")
+            return "Извините, модель временно недоступна."
+
+        # Обрабатываем JSON-ответ
         response_data = response.json()
 
-        # Проверяем тип данных в ответе
-        if isinstance(response_data, dict):
-            # Если ответ — словарь
-            return response_data.get("generated_text", "Извините, я не смог найти подходящий ответ.")
-        elif isinstance(response_data, list) and len(response_data) > 0:
-            # Если ответ — список
-            return response_data[0].get("generated_text", "Извините, я не смог найти подходящий ответ.")
-        else:
-            # Непредвиденный формат данных
-            logger.error(f"Unexpected response format: {response_data}")
-            return "Произошла ошибка при обработке ответа от ИИ."
+        # Проверка на наличие ошибок в ответе
+        if "error" in response_data:
+            logger.error(f"Hugging Face API Error: {response_data['error']}")
+            return "Ошибка: модель недоступна или запрос некорректен."
 
+        # Возвращаем сгенерированный текст
+        if isinstance(response_data, dict) and "generated_text" in response_data:
+            return response_data["generated_text"]
+        elif isinstance(response_data, list) and len(response_data) > 0 and "generated_text" in response_data[0]:
+            return response_data[0]["generated_text"]
+        else:
+            logger.error(f"Unexpected Hugging Face Response Format: {response_data}")
+            return "Извините, произошла ошибка в обработке ответа от ИИ."
     except Exception as e:
-        # Логируем ошибку
         logger.error(f"Error during AI request: {e}")
         return "Произошла ошибка при общении с ИИ."
 
