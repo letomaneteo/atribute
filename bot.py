@@ -92,22 +92,42 @@ def webhook():
         return f"Error: {e}", 500
 
 def get_ai_response(user_input):
-    """Отправляет запрос к Hugging Face API и возвращает ответ."""
     try:
-        url = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        # Настраиваем запрос к HuggingFace
+        huggingface_url = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+        headers = {
+            "Authorization": f"Bearer {os.getenv('HUGGINGFACE_TOKEN')}"  # Токен из переменной окружения
+        }
         payload = {"inputs": user_input}
-        response = requests.post(url, headers=headers, json=payload)
-        
-        if response.status_code == 200:
-            ai_output = response.json()
-            return ai_output.get("generated_text", "Извините, я не смог ответить.")
+
+        # Отправляем запрос к API
+        response = requests.post(huggingface_url, headers=headers, json=payload)
+
+        # Проверяем статус ответа
+        if response.status_code != 200:
+            logger.error(f"Error from HuggingFace API: {response.status_code} - {response.text}")
+            return "Извините, возникла ошибка при обработке вашего запроса."
+
+        # Обрабатываем ответ
+        response_data = response.json()
+
+        # Проверяем тип данных в ответе
+        if isinstance(response_data, dict):
+            # Если ответ — словарь
+            return response_data.get("generated_text", "Извините, я не смог найти подходящий ответ.")
+        elif isinstance(response_data, list) and len(response_data) > 0:
+            # Если ответ — список
+            return response_data[0].get("generated_text", "Извините, я не смог найти подходящий ответ.")
         else:
-            logger.error(f"Error from AI API: {response.status_code} - {response.text}")
-            return "Произошла ошибка при получении ответа от ИИ."
+            # Непредвиденный формат данных
+            logger.error(f"Unexpected response format: {response_data}")
+            return "Произошла ошибка при обработке ответа от ИИ."
+
     except Exception as e:
+        # Логируем ошибку
         logger.error(f"Error during AI request: {e}")
         return "Произошла ошибка при общении с ИИ."
+
 
 def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
