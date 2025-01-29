@@ -77,7 +77,8 @@ def webhook():
                 }
                 
                 send_message(chat_id, response_text, reply_markup)
-                send_message(chat_id, {user_name},"ℹ️ напишите в чат и пообщайтесь с ИИ!")
+                send_message(chat_id, f"ℹ️ {user_name}, напишите в чат и пообщайтесь с ИИ!")
+
             else:
                 bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
