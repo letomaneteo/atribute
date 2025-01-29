@@ -93,7 +93,7 @@ def webhook():
 
 def get_ai_response(user_input):
     try:
-        huggingface_url = "https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill"
+        huggingface_url = "https://openrouter.ai/api/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {os.getenv('HF_TOKEN')}"
         }
