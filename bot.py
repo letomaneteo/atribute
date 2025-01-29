@@ -68,6 +68,40 @@ def webhook():
                                 f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
                                 f"<u>Вы нажали: {text}</u>"
                 send_message(chat_id, response_text)
+                # Создаем inline кнопки
+                reply_markup = {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "✨Смотреть интерактивные 3D модели✨",
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}  # Ссылка на приложение
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🔗Все о web-анимации🔗",
+                                "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"  # Ссылка на внешний ресурс
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🎮Поиграть(Победить за 22 клика)🎮",
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Callback для обработки
+                            }
+                        ]
+                    ]
+                }
+
+                # Преобразуем reply_markup в строку JSON с обработкой ошибок
+                try:
+                    reply_markup_json = json.dumps(reply_markup)
+                except Exception as e:
+                    logger.error(f"Error converting reply_markup to JSON: {e}")
+                    reply_markup_json = None  # Установите значение по умолчанию
+
+                # Отправляем ответ на команду /start с inline кнопками
+                send_message(chat_id, response_text, reply_markup_json)
+
             else:
                 bot_response = chat_with_ai(text)  # Отправляем текст в OpenRouter
                 send_message(chat_id, bot_response)
