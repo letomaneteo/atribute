@@ -91,44 +91,25 @@ def webhook():
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
+
 def get_ai_response(user_input):
-    try:
-        huggingface_url = "https://openrouter.ai/api/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {os.getenv('HF_TOKEN')}"
-        }
-        payload = {"inputs": user_input}
-
-        # Отправляем запрос к Hugging Face API
-        response = requests.post(huggingface_url, headers=headers, json=payload)
-
-        # Логируем ответ для диагностики
-        logger.debug(f"Hugging Face Response: {response.text}")
-
-        # Проверяем статус код
-        if response.status_code != 200:
-            logger.error(f"Hugging Face API Error: {response.status_code} - {response.text}")
-            return "Извините, модель временно недоступна."
-
-        # Обрабатываем JSON-ответ
-        response_data = response.json()
-
-        # Проверка на наличие ошибок в ответе
-        if "error" in response_data:
-            logger.error(f"Hugging Face API Error: {response_data['error']}")
-            return "Ошибка: модель недоступна или запрос некорректен."
-
-        # Возвращаем сгенерированный текст
-        if isinstance(response_data, dict) and "generated_text" in response_data:
-            return response_data["generated_text"]
-        elif isinstance(response_data, list) and len(response_data) > 0 and "generated_text" in response_data[0]:
-            return response_data[0]["generated_text"]
-        else:
-            logger.error(f"Unexpected Hugging Face Response Format: {response_data}")
-            return "Извините, произошла ошибка в обработке ответа от ИИ."
-    except Exception as e:
-        logger.error(f"Error during AI request: {e}")
-        return "Произошла ошибка при общении с ИИ."
+  url="https://openrouter.ai/api/v1/chat/completions",
+  headers={
+    "Authorization": "Bearer <OPENROUTER_API_KEY>",
+    "HTTP-Referer": "<YOUR_SITE_URL>", # Optional. Site URL for rankings on openrouter.ai.
+    "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
+  },
+  data=json.dumps({
+    "model": "deepseek/deepseek-r1", # Optional
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the meaning of life?"
+      }
+    ]
+    
+  })
+)
 
 
 def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
