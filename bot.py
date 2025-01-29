@@ -65,8 +65,8 @@ def webhook():
                 user_name = data["message"]["from"].get("username", "неизвестно")
                 user_id = data["message"]["from"]["id"]
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
-                                f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
-                                f"<u>Вы нажали: {text}</u>"
+                                f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
+                                f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
                 
                 reply_markup = {
                     "inline_keyboard": [
