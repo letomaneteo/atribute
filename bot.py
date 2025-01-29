@@ -38,7 +38,7 @@ def chat_with_ai(user_message):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "mistralai/mistral-7b",  # Менее затратная модель
+        "model": "liquid/lfm-7b",  # Менее затратная модель
         "messages": [{"role": "user", "content": user_message}],
         "max_tokens": 100  # Ограничение длины ответа
     }
