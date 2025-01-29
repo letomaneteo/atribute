@@ -38,9 +38,9 @@ def chat_with_ai(user_message):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "liquid/lfm-7b",  # Менее затратная модель
+        "model": "liquid/lfm-7b",
         "messages": [{"role": "user", "content": user_message}],
-        "max_tokens": 100  # Ограничение длины ответа
+        "max_tokens": 100
     }
 
     response = requests.post(url, headers=headers, json=data)
@@ -67,22 +67,32 @@ def webhook():
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
                                 f"<i>Ваш телеграм ID: {user_id}.</i>\n" \
                                 f"<u>Вы нажали: {text}</u>"
-                send_message(chat_id, response_text)
-              
+                
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "✨Смотреть интерактивные 3D модели✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"}],
+                        [{"text": "🎮Поиграть(Победить за 22 клика)🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+                    ]
+                }
+                
+                send_message(chat_id, response_text, reply_markup)
             else:
-                bot_response = chat_with_ai(text)  # Отправляем текст в OpenRouter
+                bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
-
+        
         return "OK", 200
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
 # Функция отправки сообщений в Telegram
-def send_message(chat_id, text, parse_mode='HTML'):
+def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
+        if reply_markup:
+            params['reply_markup'] = json.dumps(reply_markup)
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
