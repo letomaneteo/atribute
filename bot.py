@@ -10,10 +10,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Установите ваш токен для бота и Hugging Face
+# Установите ваш токен для бота
 TOKEN = os.getenv("TELEGRAM_TOKEN")  # Получаем токен из переменной окружения
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Получаем URL вебхука из переменной окружения
-HF_TOKEN = os.getenv("HF_TOKEN")  # Токен Hugging Face для работы с ИИ
 
 # Установка вебхука
 def set_webhook():
@@ -39,9 +38,8 @@ def webhook():
 
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
-            chat_id = data["message"]["chat"]["id"]
-
             if text == "/start":
+                chat_id = data["message"]["chat"]["id"]
                 user_name = data["message"]["from"].get("username", "неизвестно")
                 user_id = data["message"]["from"]["id"]
                 logger.info(f"Sending reply to chat_id: {chat_id} (User: {user_name}, ID: {user_id})")
@@ -57,67 +55,45 @@ def webhook():
                         [
                             {
                                 "text": "✨Смотреть интерактивные 3D модели✨",
-                                "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}  # Ссылка на приложение
                             }
                         ],
                         [
                             {
                                 "text": "🔗Все о web-анимации🔗",
-                                "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"
+                                "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"  # Ссылка на внешний ресурс
                             }
                         ],
                         [
                             {
                                 "text": "🎮Поиграть(Победить за 22 клика)🎮",
-                                "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}
+                                "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}  # Callback для обработки
                             }
                         ]
                     ]
                 }
 
-                # Преобразуем reply_markup в строку JSON
-                reply_markup_json = json.dumps(reply_markup)
+                # Преобразуем reply_markup в строку JSON с обработкой ошибок
+                try:
+                    reply_markup_json = json.dumps(reply_markup)
+                except Exception as e:
+                    logger.error(f"Error converting reply_markup to JSON: {e}")
+                    reply_markup_json = None  # Установите значение по умолчанию
 
                 # Отправляем ответ на команду /start с inline кнопками
                 send_message(chat_id, response_text, reply_markup_json)
-
-            else:
-                # Обработка сообщения через Hugging Face
-                response_text = get_ai_response(text)
-                send_message(chat_id, response_text)
 
         return "OK", 200
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
         return f"Error: {e}", 500
 
-
-def get_ai_response(user_input):
-  url="https://openrouter.ai/api/v1/chat/completions",
-  headers={
-    "Authorization": "Bearer <OPENROUTER_API_KEY>",
-    "HTTP-Referer": "<YOUR_SITE_URL>", # Optional. Site URL for rankings on openrouter.ai.
-    "X-Title": "<YOUR_SITE_NAME>", # Optional. Site title for rankings on openrouter.ai.
-  },
-  data=json.dumps({
-    "model": "deepseek/deepseek-r1", # Optional
-    "messages": [
-      {
-        "role": "user",
-        "content": "What is the meaning of life?"
-      }
-    ]
-    
-  })
-)
-
-
 def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
         url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
         params = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
         if reply_markup:
-            params['reply_markup'] = reply_markup
+            params['reply_markup'] = reply_markup  # Отправляем reply_markup как строку JSON
         response = requests.post(url, params=params)
         if response.status_code == 200:
             logger.info(f"Message sent to {chat_id}")
