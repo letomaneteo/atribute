@@ -70,13 +70,14 @@ def webhook():
                 
                 reply_markup = {
                     "inline_keyboard": [
-                        [{"text": "✨Смотреть интерактивные 3D модели✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "✨Тематические шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
                         [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"}],
-                        [{"text": "🎮Поиграть(Победить за 22 клика)🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
                 }
                 
                 send_message(chat_id, response_text, reply_markup)
+                send_message(chat_id, {user_name},"ℹ️ напишите в чат и пообщайтесь с ИИ!")
             else:
                 bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
