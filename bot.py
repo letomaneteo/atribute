@@ -15,6 +15,28 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
 
+def set_bot_commands():
+    url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
+    commands = {
+        "commands": [
+            {"command": "start", "description": "Запустить бота"},
+            {"command": "help", "description": "Помощь"},
+            {"command": "info", "description": "Информация"},
+            {"command": "game", "description": "Запустить игру"},
+            {"command": "contact", "description": "Связаться с нами"}
+        ]
+    }
+    
+    response = requests.post(url, json=commands)
+    if response.status_code == 200:
+        logger.info("Команды успешно добавлены!")
+    else:
+        logger.error(f"Ошибка при добавлении команд: {response.text}")
+
+# Вызываем функцию при старте
+set_bot_commands()
+
+
 # Установка вебхука
 def set_webhook():
     try:
