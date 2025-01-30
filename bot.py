@@ -74,7 +74,7 @@ def show_menu(chat_id):
 
     send_message(chat_id, "Выберите действие:", reply_markup)
 
-# Обработка сообщений
+# Обновленный обработчик сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -91,7 +91,7 @@ def webhook():
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
                                 f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
                                 f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
-                
+
                 reply_markup = {
                     "inline_keyboard": [
                         [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
@@ -99,15 +99,15 @@ def webhook():
                         [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
                 }
-                
+
                 send_message(chat_id, response_text, reply_markup)
                 send_message(chat_id, f"ℹ️ {user_name}, в меню есть еще ссылки!")
 
             elif text == "/menu":
-                show_menu(chat_id)  # Показываем кнопки меню
+                show_menu(chat_id)
 
             else:
-                bot_response = chat_with_ai(text)
+                bot_response = chat_with_deepseek(text)
                 send_message(chat_id, bot_response)
 
         return "OK", 200
@@ -115,26 +115,35 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-# Функция общения с ИИ
-def chat_with_ai(user_message):
-    url = "https://openrouter.ai/api/v1/chat/completions"
+# Функция общения с ИИ через proxy.tune.app
+def chat_with_deepseek(user_message):
+    url = "https://proxy.tune.app/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": "sk-...x8b",  # Замените на ваш API-ключ
         "Content-Type": "application/json"
     }
     data = {
-        "model": "liquid/lfm-7b",
+        "temperature": 0.8,
         "messages": [{"role": "user", "content": user_message}],
-        "max_tokens": 100
+        "model": "deepseek/deepseek-r1",
+        "stream": False,
+        "frequency_penalty": 0,
+        "max_tokens": 900
     }
 
-    response = requests.post(url, headers=headers, json=data)
-    response_json = response.json()
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response_json = response.json()
+        
+        if "choices" in response_json:
+            return response_json["choices"][0]["message"]["content"]
+        else:
+            return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
+    
+    except Exception as e:
+        logger.error(f"Ошибка при вызове API: {e}")
+        return "❌ Ошибка обработки запроса AI."
 
-    if "choices" in response_json:
-        return response_json["choices"][0]["message"]["content"]
-    else:
-        return f"Ошибка OpenRouter: {response_json.get('error', 'Неизвестная ошибка')}"
-
+        
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)
