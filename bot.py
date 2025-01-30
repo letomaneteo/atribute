@@ -20,10 +20,7 @@ def set_bot_commands():
     commands = {
         "commands": [
             {"command": "start", "description": "Запустить бота"},
-            {"command": "help", "description": "Помощь"},
-            {"command": "info", "description": "Информация"},
-            {"command": "game", "description": "Запустить игру"},
-            {"command": "contact", "description": "Связаться с нами"}
+            {"command": "menu", "description": "Открыть основное меню"}
         ]
     }
     
@@ -33,24 +30,55 @@ def set_bot_commands():
     else:
         logger.error(f"Ошибка при добавлении команд: {response.text}")
 
-# Вызываем функцию при старте
+# Устанавливаем команды при старте
 set_bot_commands()
 
+def menu(update, context):
+    chat_id = update["message"]["chat"]["id"]
+    
+    reply_markup = {
+        "keyboard": [
+            [{"text": "✨ Тематические шоурумы"}],
+            [{"text": "🔗 Всё о web-анимации"}],
+            [{"text": "🎮 Игра: Победа в 22 клика"}]
+        ],
+        "resize_keyboard": True,  # Автоматическая подгонка клавиатуры
+        "one_time_keyboard": False  # Клавиатура остаётся на экране
+    }
 
-# Установка вебхука
-def set_webhook():
+    send_message(chat_id, "Выберите действие:", reply_markup)
+
+# Добавляем обработчик в вебхук
+@app.route('/webhook', methods=['POST'])
+def webhook():
     try:
-        url = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
-        params = {'url': WEBHOOK_URL}
-        response = requests.post(url, params=params)
-        if response.status_code == 200:
-            logger.info("Webhook set successfully.")
-        else:
-            logger.error(f"Error setting webhook: {response.status_code} - {response.text}")
-    except Exception as e:
-        logger.error(f"Error setting webhook: {e}")
+        data = request.get_json()
+        logger.debug(f"Received data: {data}")
 
-set_webhook()  # Устанавливаем вебхук при запуске
+        if "message" in data and "text" in data["message"]:
+            text = data["message"]["text"]
+            chat_id = data["message"]["chat"]["id"]
+
+            if text == "/start":
+                user_name = data["message"]["from"].get("username", "неизвестно")
+                user_id = data["message"]["from"]["id"]
+                response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
+                                f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
+                                f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
+
+                send_message(chat_id, response_text)
+
+            elif text == "/menu":
+                menu(update, context)  # Показываем меню
+
+            else:
+                bot_response = chat_with_ai(text)
+                send_message(chat_id, bot_response)
+
+        return "OK", 200
+    except Exception as e:
+        logger.error(f"Error processing webhook: {e}")
+        return f"Error: {e}", 500
 
 # Функция запроса к OpenRouter
 def chat_with_ai(user_message):
