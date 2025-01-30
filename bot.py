@@ -119,7 +119,7 @@ def webhook():
 def chat_with_deepseek(user_message):
     url = "https://proxy.tune.app/chat/completions"
     headers = {
-        "Authorization": "sk-...x8b",  # Замените на ваш API-ключ
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # Замените на ваш API-ключ
         "Content-Type": "application/json"
     }
     data = {
