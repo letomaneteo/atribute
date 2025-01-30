@@ -64,9 +64,9 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "✨ Тематические шоурумы"}],
-            [{"text": "🔗 Всё о web-анимации"}],
-            [{"text": "🎮 Игра: Победа в 22 клика"}]
+            [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+            [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"}],
+            [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
         "resize_keyboard": True,
         "one_time_keyboard": False
@@ -94,7 +94,7 @@ def webhook():
                 
                 reply_markup = {
                     "inline_keyboard": [
-                        [{"text": "✨Тематические шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
                         [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/%D0%B0%D0%BD%D0%B8%D0%BC%D0%B0%D1%86%D0%B8%D1%8F-%D0%BD%D0%B0-%D1%81%D0%B0%D0%B9%D1%82%D0%B5"}],
                         [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
