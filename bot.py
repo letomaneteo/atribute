@@ -64,8 +64,8 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
             [{"text": "🔗Наш сайт🔗", "url": "https://www.3dls.store/о-нас"}],
+            [{"text": "🔗Заказать свой проект🔗", "url": "https://www.3dls.store/заказать-свой-проект"}],
             [{"text": "Смотреть кино (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
         "resize_keyboard": True,
