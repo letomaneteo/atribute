@@ -3,7 +3,6 @@ import requests
 import logging
 import json
 import os
-from bs4 import BeautifulSoup
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -62,22 +61,20 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
         logger.error(f"Ошибка при отправке сообщения: {e}")
 
 # Функция обработки команды /menu
-# Функция обработки команды /menu
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "💬 Общий бот", "callback_data": "general_bot"}],  # Кнопка для выбора общего бота
-            [{"text": "🧠 Бот для вопросов по тексту", "callback_data": "text_bot"}]  # Кнопка для выбора бота для текстовых вопросов
+            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
         "resize_keyboard": True,
         "one_time_keyboard": False
     }
 
-    send_message(chat_id, "Выберите, с каким ботом хотите общаться:", reply_markup)
+    send_message(chat_id, "Выберите действие:", reply_markup)
 
+# Обработка сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -109,67 +106,15 @@ def webhook():
             elif text == "/menu":
                 show_menu(chat_id)  # Показываем кнопки меню
 
-            elif text == "/parse":
-                parsed_data = parse_3dls_page()  # Парсим страницу
-                send_message(chat_id, parsed_data)  # Отправляем пользователю
-
-            elif text == "/parse_ai":
-                parsed_data = parse_3dls_page()  # Парсим
-                ai_response = chat_with_ai(parsed_data)  # Отправляем в ИИ
-                send_message(chat_id, ai_response)  # Ответ ИИ
-
             else:
                 bot_response = chat_with_ai(text)
-       # Обработка callback_query для выбора бота
-        if "callback_query" in data:
-            callback_data = data["callback_query"]["data"]
-            chat_id = data["callback_query"]["from"]["id"]
-        
-            # Сохраняем выбор бота
-            if callback_data == "general_bot":
-                current_bot_choice[chat_id] = "general_bot"
-                send_message(chat_id, "Вы выбрали Общий бот. Теперь вы можете задать вопросы.")
-            elif callback_data == "text_bot":
-                current_bot_choice[chat_id] = "text_bot"
-                send_message(chat_id, "Вы выбрали Бот для вопросов по тексту. Можете задать вопрос.")
-                 send_message(chat_id, bot_response)
-
-           else:
-            # Проверка, какой бот выбран
-            selected_bot = current_bot_choice.get(chat_id, "general_bot")
-        
-            if selected_bot == "general_bot":
-                bot_response = chat_with_ai(text)
-            elif selected_bot == "text_bot":
-                parsed_data = parse_3dls_page()
-                bot_response = chat_with_ai(parsed_data)
-            send_message(chat_id, bot_response)
-
+                send_message(chat_id, bot_response)
 
         return "OK", 200
     except Exception as e:
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-
-def parse_3dls_page():
-    url = "https://letomaneteo.github.io/myweb/3dls.html"
-    try:
-        response = requests.get(url)
-        if response.status_code != 200:
-            return f"Ошибка загрузки страницы: {response.status_code}"
-        
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        # Допустим, мы хотим извлечь заголовок <h1> и все параграфы <p>
-        title = soup.find("h1").text.strip() if soup.find("h1") else "Без заголовка"
-        paragraphs = [p.text.strip() for p in soup.find_all("p")]
-
-        return f"🔹 Заголовок: {title}\n🔹 Описание: {' '.join(paragraphs[:2])}"  # Ограничим 2 первыми абзацами
-
-    except Exception as e:
-        return f"Ошибка парсинга: {e}"
-        
 def chat_with_ai(user_message):
     url = "https://proxy.tune.app/chat/completions"
     headers = {
