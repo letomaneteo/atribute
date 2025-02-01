@@ -115,7 +115,6 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-# Функция общения с ИИ через proxy.tune.app
 def chat_with_deepseek(user_message):
     url = "https://proxy.tune.app/chat/completions"
     headers = {
@@ -132,13 +131,17 @@ def chat_with_deepseek(user_message):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=data, timeout=10)  # Добавлен таймаут
         response_json = response.json()
         
         if "choices" in response_json:
             return response_json["choices"][0]["message"]["content"]
         else:
             return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
+    
+    except requests.exceptions.Timeout:
+        logger.error("Запрос к API тайм-аут!")
+        return "❌ Запрос к сервису занял слишком много времени."
     
     except Exception as e:
         logger.error(f"Ошибка при вызове API: {e}")
