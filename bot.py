@@ -138,6 +138,7 @@ def show_menu(chat_id):
 # Обновленный обработчик сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
+     logger.debug("Получен запрос на вебхук.")
     try:
         data = request.get_json()
         logger.debug(f"Получены данные: {data}")
