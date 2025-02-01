@@ -3,7 +3,6 @@ import requests
 import logging
 import json
 import os
-from bs4 import BeautifulSoup
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -16,7 +15,6 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
 
-BASE_URL = "https://raw.githubusercontent.com/letomaneteo/myweb/main/3dls.txt"
 # Установка команд в меню
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
@@ -47,65 +45,6 @@ def set_webhook():
 
 set_webhook()
 
-# 🔹 Функция для получения всех ссылок с главной страницы
-def get_all_links():
-    response = requests.get(BASE_URL)
-    soup = BeautifulSoup(response.text, "html.parser")
-    
-    links = set()
-    for a_tag in soup.find_all("a", href=True):
-        url = a_tag["href"]
-        if url.startswith("/") or BASE_URL in url:
-            full_url = url if BASE_URL in url else BASE_URL + url
-            links.add(full_url)
-    
-    return list(links)
-
-# 🔹 Функция для парсинга текста со всех страниц
-def get_text_from_all_pages():
-    links = get_all_links()[:3]  # Ограничиваем до 3 страниц
-    all_text = ""
-
-    for link in links:
-        try:
-            response = requests.get(link, timeout=5)  # Ограничиваем время запроса
-            soup = BeautifulSoup(response.text, "html.parser")
-            page_text = soup.get_text()
-            all_text += f"\n=== {link} ===\n{page_text[:3000]}\n"  # Обрезаем до 2000 символов
-        except Exception as e:
-            print(f"Ошибка при парсинге {link}: {e}")
-
-    return all_text[:8000]  # Финальное ограничение
-
-site_text = get_text_from_all_pages()
-print(f"Длина загруженного текста: {len(site_text)} символов")
-
-def chat_with_deepseek(user_message):
-    url = "https://proxy.tune.app/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "temperature": 0.8,
-        "messages": [
-            {"role": "system", "content": f"Используй этот текст для ответов: {site_text}"},
-            {"role": "user", "content": user_message}
-        ],
-        "model": "deepseek/deepseek-r1",
-        "stream": False,
-        "frequency_penalty": 0,
-        "max_tokens": 900
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response_json = response.json()
-        return response_json["choices"][0]["message"]["content"]
-    except Exception as e:
-        return f"Ошибка AI: {e}"
-
-
 # Функция отправки сообщений
 def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     try:
@@ -133,7 +72,7 @@ def show_menu(chat_id):
         "one_time_keyboard": False
     }
 
-    send_message(chat_id, "Выберите пункт меню:", reply_markup)
+    send_message(chat_id, "Выберите действие:", reply_markup)
 
 # Обновленный обработчик сообщений
 @app.route('/webhook', methods=['POST'])
@@ -204,7 +143,6 @@ def chat_with_deepseek(user_message):
     except Exception as e:
         logger.error(f"Ошибка при вызове API: {e}")
         return "❌ Ошибка обработки запроса AI."
-
 
         
 if __name__ == '__main__':
