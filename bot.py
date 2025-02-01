@@ -132,7 +132,7 @@ def show_menu(chat_id):
         "one_time_keyboard": False
     }
 
-    send_message(chat_id, "Выберите действие:", reply_markup)
+    send_message(chat_id, "Выберите пункт меню:", reply_markup)
 
 # Обновленный обработчик сообщений
 @app.route('/webhook', methods=['POST'])
