@@ -1,149 +1,178 @@
-from flask import Flask, request
-import requests
-import logging
-import json
-import os
-
-# Настройка логирования
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-app = Flask(__name__)
-
-# Токены
-TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
-
-# Установка команд в меню
-def set_bot_commands():
-    url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
-    commands = {
-        "commands": [
-            {"command": "start", "description": "Запустить бота"},
-            {"command": "menu", "description": "Открыть основное меню"}
-        ]
+const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 1);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.5;
+        document.body.appendChild(renderer.domElement);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7.5).normalize();
+        scene.add(directionalLight);
+        new THREE.EXRLoader()
+            .load('https://raw.githubusercontent.com/letomaneteo/21/main/sunset_fairway_4k.exr', (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.environment = texture;
+            });
+        const loader = new THREE.GLTFLoader();
+        let model;
+        let mixer;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const targetObjects = [
+            { name: "Mesh002", animationName: "Object03Action" },
+            { name: "Mesh005", animationName: "Object01Action" },
+            { name: "Mesh014", animationName: "Object02Action" },
+        ];
+        const interactiveObjects = [];
+        loader.load(
+            'https://raw.githubusercontent.com/letomaneteo/21/main/3tumbalux.glb',
+            (gltf) => {
+                model = gltf.scene;
+                mixer = new THREE.AnimationMixer(model);
+                model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.envMap = scene.environment;
+                        child.material.needsUpdate = true;
+                        const target = targetObjects.find(obj => obj.name === child.name);
+                        if (target) {
+                            const animationClip = gltf.animations.find(anim => anim.name === target.animationName);
+                            if (animationClip) {
+                                const action = mixer.clipAction(animationClip);
+                                action.clampWhenFinished = true;
+                                action.loop = THREE.LoopOnce;
+                                interactiveObjects.push({ mesh: child, action, playingForward: true });
+                            }
+                        }
+                    }
+                });
+model.rotation.set(0, Math.PI / 2, 0);
+                scene.add(model);
+            },
+            undefined,
+            (error) => console.error('Ошибка загрузки модели:', error)
+        );
+        function onPointerClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interactiveObjects.map(obj => obj.mesh), true);
+            if (intersects.length > 0) {
+                const clickedMesh = intersects[0].object;
+                interactiveObjects.forEach((obj) => {
+                    if (obj.mesh === clickedMesh) {
+                        if (obj.playingForward) {
+                            obj.action.reset();
+                            obj.action.timeScale = 1;
+                            obj.action.play();
+                        } else {
+                            obj.action.reset();
+                            obj.action.timeScale = -1;
+                            obj.action.time = obj.action.getClip().duration;
+                            obj.action.play();
+                        }
+                        obj.playingForward = !obj.playingForward;
+                    }
+                });
+            }
+        }
+        window.addEventListener('click', onPointerClick);
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let autoRotate = true;
+        const rotationSpeed = 0.001;
+        let touchStartPosition = { x: 0, y: 0 };
+        let touchStartDistance = 0;
+        // Блокировка прокрутки при вращении
+        let isRotationActive = false;
+        renderer.domElement.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            autoRotate = false;
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+            isRotationActive = true; // Включаем блокировку прокрутки при вращении
+        });
+        renderer.domElement.addEventListener('mousemove', (event) => {
+            if (isDragging && model) {
+                const deltaMove = {
+                    x: event.clientX - previousMousePosition.x,
+                    y: event.clientY - previousMousePosition.y,
+                };
+                model.rotation.y += deltaMove.x * 0.005;
+                model.rotation.x += deltaMove.y * 0.005;
+                previousMousePosition = { x: event.clientX, y: event.clientY };
+            }
+        });
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+            autoRotate = true;
+            isRotationActive = false; // Отключаем блокировку прокрутки после вращения
+        });
+        renderer.domElement.addEventListener('wheel', (event) => {
+            if (isRotationActive) {
+                event.preventDefault(); // Отключаем прокрутку страницы при вращении
+            }
+            if (model) {
+                const scaleChange = event.deltaY > 0 ? 0.95 : 1.05;
+                model.scale.multiplyScalar(scaleChange);
+            }
+        });
+        // Блокировка прокрутки только во время взаимодействия с канвасом
+renderer.domElement.addEventListener('touchstart', (event) => {
+    if (event.touches.length === 1) {
+        touchStartPosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } else if (event.touches.length === 2) {
+        event.preventDefault(); // Блокировка прокрутки страницы при масштабировании
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+         }
+});
+renderer.domElement.addEventListener('touchmove', (event) => {
+    if (event.touches.length === 1 && model) {
+        const touchCurrentPosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+        const deltaMove = {
+            x: touchCurrentPosition.x - touchStartPosition.x,
+            y: touchCurrentPosition.y - touchStartPosition.y,
+        };
+        model.rotation.y += deltaMove.x * 0.005;
+        model.rotation.x += deltaMove.y * 0.005;
+        touchStartPosition = touchCurrentPosition;
+        event.preventDefault(); // Блокировка прокрутки страницы при вращении модели
+    } else if (event.touches.length === 2 && model) {
+        event.preventDefault(); // Блокировка прокрутки страницы при масштабировании
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const scaleChange = distance / touchStartDistance;
+        model.scale.multiplyScalar(scaleChange);
+        touchStartDistance = distance;
+         }
+});
+// Оригинальный код для обработки скролла на ПК остается без изменений
+renderer.domElement.addEventListener('wheel', (event) => {
+    event.preventDefault(); // Отключение прокрутки страницы на ПК
+    if (model) {
+        const scaleChange = event.deltaY > 0 ? 0.95 : 1.05;
+        model.scale.multiplyScalar(scaleChange);
     }
-    
-    response = requests.post(url, json=commands)
-    if response.status_code == 200:
-        logger.info("Команды успешно добавлены!")
-    else:
-        logger.error(f"Ошибка при добавлении команд: {response.text}")
+});
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+            if (autoRotate && model) {
+                model.rotation.y += rotationSpeed;
+            }
 
-set_bot_commands()
-
-# Установка вебхука
-def set_webhook():
-    url = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
-    params = {'url': WEBHOOK_URL}
-    response = requests.post(url, params=params)
-    if response.status_code == 200:
-        logger.info("Webhook установлен!")
-    else:
-        logger.error(f"Ошибка установки вебхука: {response.text}")
-
-set_webhook()
-
-# Функция отправки сообщений
-def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
-    try:
-        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-        params = {'chat_id': chat_id, 'text': text, 'parse_mode': parse_mode}
-        if reply_markup:
-            params['reply_markup'] = json.dumps(reply_markup)
-        response = requests.post(url, params=params)
-        if response.status_code == 200:
-            logger.info(f"Сообщение отправлено в {chat_id}")
-        else:
-            logger.error(f"Ошибка отправки: {response.text}")
-    except Exception as e:
-        logger.error(f"Ошибка при отправке сообщения: {e}")
-
-# Функция обработки команды /menu
-def show_menu(chat_id):
-    reply_markup = {
-        "keyboard": [
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
-        ],
-        "resize_keyboard": True,
-        "one_time_keyboard": False
-    }
-
-    send_message(chat_id, "Выберите действие:", reply_markup)
-
-# Обновленный обработчик сообщений
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    try:
-        data = request.get_json()
-        logger.debug(f"Получены данные: {data}")
-
-        if "message" in data and "text" in data["message"]:
-            text = data["message"]["text"]
-            chat_id = data["message"]["chat"]["id"]
-
-            if text == "/start":
-                user_name = data["message"]["from"].get("username", "неизвестно")
-                user_id = data["message"]["from"]["id"]
-                response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
-                                f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
-                                f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
-
-                reply_markup = {
-                    "inline_keyboard": [
-                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
-                        [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
-                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
-                    ]
-                }
-
-                send_message(chat_id, response_text, reply_markup)
-                send_message(chat_id, f"ℹ️ {user_name}, в меню есть еще ссылки!")
-
-            elif text == "/menu":
-                show_menu(chat_id)
-
-            else:
-                bot_response = chat_with_deepseek(text)
-                send_message(chat_id, bot_response)
-
-        return "OK", 200
-    except Exception as e:
-        logger.error(f"Ошибка обработки webhook: {e}")
-        return f"Error: {e}", 500
-
-# Функция общения с ИИ через proxy.tune.app
-def chat_with_deepseek(user_message):
-    url = "https://proxy.tune.app/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # Замените на ваш API-ключ
-        "Content-Type": "application/json"
-    }
-    data = {
-        "temperature": 0.8,
-        "messages": [{"role": "user", "content": user_message}],
-        "model": "deepseek/deepseek-r1",
-        "stream": False,
-        "frequency_penalty": 0,
-        "max_tokens": 900
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response_json = response.json()
-        
-        if "choices" in response_json:
-            return response_json["choices"][0]["message"]["content"]
-        else:
-            return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
-    
-    except Exception as e:
-        logger.error(f"Ошибка при вызове API: {e}")
-        return "❌ Ошибка обработки запроса AI."
-
-        
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+            renderer.render(scene, camera);
+        }
+        animate();
+ window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
