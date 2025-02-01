@@ -115,27 +115,34 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-# Функция общения с ИИ
 def chat_with_ai(user_message):
-    url = "https://openrouter.ai/api/v1/chat/completions"
+    url = "https://proxy.tune.app/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # API-ключ из переменной окружения
         "Content-Type": "application/json"
     }
     data = {
-        "model": "liquid/lfm-7b",
-        "messages": [{"role": "user", "content": user_message}],
+        "temperature": 0.9,
+        "messages": [
+            {"role": "system", "content": "You are TuneStudio"},
+            {"role": "user", "content": user_message}
+        ],
+        "model": "deepseek/deepseek-v3",
+        "stream": False,
+        "frequency_penalty": 0.2,
         "max_tokens": 100
     }
 
     response = requests.post(url, headers=headers, json=data)
-    response_json = response.json()
-
-    if "choices" in response_json:
-        return response_json["choices"][0]["message"]["content"]
-    else:
-        return f"Ошибка OpenRouter: {response_json.get('error', 'Неизвестная ошибка')}"
-
+    
+    try:
+        response_json = response.json()
+        if "choices" in response_json:
+            return response_json["choices"][0]["message"]["content"]
+        else:
+            return f"Ошибка Tune API: {response_json.get('error', 'Неизвестная ошибка')}"
+    except Exception as e:
+        return f"Ошибка обработки ответа API: {e}"
        
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
