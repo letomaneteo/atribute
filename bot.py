@@ -15,9 +15,6 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
 
-# Хранение состояния пользователей (ждет ли бот сообщение для ИИ)
-user_state = {}
-
 # Установка команд в меню
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
@@ -27,6 +24,7 @@ def set_bot_commands():
             {"command": "menu", "description": "Открыть основное меню"}
         ]
     }
+    
     response = requests.post(url, json=commands)
     if response.status_code == 200:
         logger.info("Команды успешно добавлены!")
@@ -66,13 +64,14 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "🤖 Вызвать ИИ"}],
+            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
         "resize_keyboard": True,
         "one_time_keyboard": False
     }
+
     send_message(chat_id, "Выберите действие:", reply_markup)
 
 # Обработка сообщений
@@ -85,24 +84,32 @@ def webhook():
         if "message" in data and "text" in data["message"]:
             text = data["message"]["text"]
             chat_id = data["message"]["chat"]["id"]
-            user_id = data["message"]["from"]["id"]
 
             if text == "/start":
                 user_name = data["message"]["from"].get("username", "неизвестно")
+                user_id = data["message"]["from"]["id"]
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
-                                f"<i>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</i>"
-                send_message(chat_id, response_text)
+                                f"<i>Ваш телеграм ID: {user_id}, но это будет наш секрет.</i>\n" \
+                                f"<u>Вы нажали: {text}, а потому выбирайте</u>"
+                
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
+                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+                    ]
+                }
+                
+                send_message(chat_id, response_text, reply_markup)
+                send_message(chat_id, f"ℹ️ {user_name}, привет, я DeepSeek, я готов тебе ответить!")
+
             elif text == "/menu":
                 show_menu(chat_id)  # Показываем кнопки меню
-            elif text == "🤖 Вызвать ИИ":
-                user_state[user_id] = "awaiting_ai"
-                send_message(chat_id, "ИИ активирован! Напишите ваш вопрос.")
-            elif user_id in user_state and user_state[user_id] == "awaiting_ai":
+
+            else:
                 bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
-                del user_state[user_id]
-            else:
-                send_message(chat_id, "Неизвестная команда. Используйте /menu.")
+
         return "OK", 200
     except Exception as e:
         logger.error(f"Ошибка обработки webhook: {e}")
@@ -111,7 +118,7 @@ def webhook():
 def chat_with_ai(user_message):
     url = "https://proxy.tune.app/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # API-ключ из переменной окружения
         "Content-Type": "application/json"
     }
     data = {
@@ -125,7 +132,9 @@ def chat_with_ai(user_message):
         "frequency_penalty": 0.2,
         "max_tokens": 100
     }
+
     response = requests.post(url, headers=headers, json=data)
+    
     try:
         response_json = response.json()
         if "choices" in response_json:
