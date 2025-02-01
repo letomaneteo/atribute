@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Токены
-TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Установка команд в меню
 def set_bot_commands():
@@ -21,10 +21,10 @@ def set_bot_commands():
     commands = {
         "commands": [
             {"command": "start", "description": "Запустить бота"},
-            {"command": "menu", "description": "Открыть основное меню"}
+            {"command": "menu", "description": "Открыть основное меню"},
+            {"command": "gettext", "description": "Отправить текст ИИ"}  # Новая команда
         ]
     }
-    
     response = requests.post(url, json=commands)
     if response.status_code == 200:
         logger.info("Команды успешно добавлены!")
@@ -60,7 +60,50 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
     except Exception as e:
         logger.error(f"Ошибка при отправке сообщения: {e}")
 
-# Функция обработки команды /menu
+# Получение текста с сайта
+def fetch_text_from_url():
+    try:
+        response = requests.get("https://letomaneteo.github.io/myweb/3dls.txt", timeout=5)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Ошибка при получении текста: {e}")
+        return None
+
+# Отправка текста ИИ (DeepSeek)
+def send_to_deepseek(input_text):
+    url = "https://proxy.tune.app/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "temperature": 0.8,
+        "messages": [{"role": "user", "content": input_text}],
+        "model": "deepseek/deepseek-r1",
+        "stream": False,
+        "frequency_penalty": 0,
+        "max_tokens": 900
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        response_json = response.json()
+        
+        if "choices" in response_json:
+            return response_json["choices"][0]["message"]["content"]
+        else:
+            return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
+    
+    except requests.exceptions.Timeout:
+        logger.error("Тайм-аут при обращении к DeepSeek API!")
+        return "❌ Время ожидания ответа от ИИ истекло."
+    
+    except Exception as e:
+        logger.error(f"Ошибка при вызове API: {e}")
+        return "❌ Ошибка при обращении к ИИ."
+
+# Обработка команды /menu
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
@@ -71,10 +114,9 @@ def show_menu(chat_id):
         "resize_keyboard": True,
         "one_time_keyboard": False
     }
-
     send_message(chat_id, "Выберите действие:", reply_markup)
 
-# Обновленный обработчик сообщений
+# Основной обработчик сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -87,27 +129,32 @@ def webhook():
 
             if text == "/start":
                 user_name = data["message"]["from"].get("username", "неизвестно")
-                user_id = data["message"]["from"]["id"]
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
-                                f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
-                                f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
+                                f"<u>Нажмите, чтобы выбрать действие:</u>"
 
                 reply_markup = {
                     "inline_keyboard": [
-                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
-                        [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
-                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+                        [{"text": "✨3D товары✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "🔗Web-анимация🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
+                        [{"text": "🎮Игра: 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
                 }
 
                 send_message(chat_id, response_text, reply_markup)
-                send_message(chat_id, f"ℹ️ {user_name}, в меню есть еще ссылки!")
 
             elif text == "/menu":
                 show_menu(chat_id)
 
+            elif text == "/gettext":
+                site_text = fetch_text_from_url()
+                if site_text:
+                    ai_response = send_to_deepseek(site_text)  # Отправляем текст ИИ
+                    send_message(chat_id, ai_response)
+                else:
+                    send_message(chat_id, "❌ Не удалось получить текст с сайта.")
+
             else:
-                bot_response = chat_with_deepseek(text)
+                bot_response = send_to_deepseek(text)
                 send_message(chat_id, bot_response)
 
         return "OK", 200
@@ -115,39 +162,5 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-def chat_with_deepseek(user_message):
-    url = "https://proxy.tune.app/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # Замените на ваш API-ключ
-        "Content-Type": "application/json"
-    }
-    data = {
-        "temperature": 0.8,
-        "messages": [{"role": "user", "content": user_message}],
-        "model": "deepseek/deepseek-r1",
-        "stream": False,
-        "frequency_penalty": 0,
-        "max_tokens": 900
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data, timeout=10)  # Добавлен таймаут
-        response_json = response.json()
-        
-        if "choices" in response_json:
-            return response_json["choices"][0]["message"]["content"]
-        else:
-            return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
-    
-    except requests.exceptions.Timeout:
-        logger.error("Запрос к API тайм-аут!")
-        return "❌ Запрос к сервису занял слишком много времени."
-    
-    except Exception as e:
-        logger.error(f"Ошибка при вызове API: {e}")
-        return "❌ Ошибка обработки запроса AI."
-
-        
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
-
