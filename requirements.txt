@@ -4,4 +4,3 @@ flask
 flask-cors
 apscheduler
 python-telegram-bot==20.3
-
