@@ -78,6 +78,7 @@ def get_text_from_all_pages():
     return all_text[:8000]  # Финальное ограничение
 
 site_text = get_text_from_all_pages()
+print(f"Длина загруженного текста: {len(site_text)} символов")
 
 def chat_with_deepseek(user_message):
     url = "https://proxy.tune.app/chat/completions"
