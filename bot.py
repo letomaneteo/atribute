@@ -63,19 +63,19 @@ def get_all_links():
 
 # 🔹 Функция для парсинга текста со всех страниц
 def get_text_from_all_pages():
-    links = get_all_links()
+    links = get_all_links()[:3]  # Ограничиваем до 3 страниц
     all_text = ""
 
     for link in links:
         try:
-            response = requests.get(link)
+            response = requests.get(link, timeout=5)  # Ограничиваем время запроса
             soup = BeautifulSoup(response.text, "html.parser")
             page_text = soup.get_text()
-            all_text += f"\n=== {link} ===\n{page_text}\n"
+            all_text += f"\n=== {link} ===\n{page_text[:2000]}\n"  # Обрезаем до 2000 символов
         except Exception as e:
             print(f"Ошибка при парсинге {link}: {e}")
 
-    return all_text[:8000]  # Ограничиваем длину для API
+    return all_text[:8000]  # Финальное ограничение
 
 site_text = get_text_from_all_pages()
 
