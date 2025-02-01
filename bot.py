@@ -3,7 +3,6 @@ import requests
 import logging
 import json
 import os
-from bs4 import BeautifulSoup
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +14,7 @@ app = Flask(__name__)
 TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
-BASE_URL = "https://letomaneteo.github.io/myweb/3dls.txt"
+
 # Установка команд в меню
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
@@ -75,7 +74,7 @@ def show_menu(chat_id):
 
     send_message(chat_id, "Выберите действие:", reply_markup)
 
-# Обновленный обработчик сообщений
+# Обработка сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -92,7 +91,7 @@ def webhook():
                 response_text = f"<b>Здравствуйте, {user_name}!</b>\n" \
                                 f"<i>Ваш телеграм ID: {user_id}, но это наш секрет.</i>\n" \
                                 f"<u>Вы нажали: {text}, а потому выбирайте, что хотите посмотреть</u>"
-
+                
                 reply_markup = {
                     "inline_keyboard": [
                         [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
@@ -100,15 +99,15 @@ def webhook():
                         [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
                 }
-
+                
                 send_message(chat_id, response_text, reply_markup)
                 send_message(chat_id, f"ℹ️ {user_name}, в меню есть еще ссылки!")
 
             elif text == "/menu":
-                show_menu(chat_id)
+                show_menu(chat_id)  # Показываем кнопки меню
 
             else:
-                bot_response = chat_with_deepseek(text)
+                bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
 
         return "OK", 200
@@ -116,67 +115,27 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
-def chat_with_deepseek(user_message):
-    url = "https://proxy.tune.app/chat/completions"
+# Функция общения с ИИ
+def chat_with_ai(user_message):
+    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",  # Замените на ваш API-ключ
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
     }
     data = {
-        "temperature": 0.8,
+        "model": "liquid/lfm-7b",
         "messages": [{"role": "user", "content": user_message}],
-        "model": "deepseek/deepseek-r1",
-        "stream": False,
-        "frequency_penalty": 0,
-        "max_tokens": 900
+        "max_tokens": 100
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=data, timeout=10)  # Добавлен таймаут
-        response_json = response.json()
-        
-        if "choices" in response_json:
-            return response_json["choices"][0]["message"]["content"]
-        else:
-            return f"Ошибка AI: {response_json.get('error', 'Неизвестная ошибка')}"
-    
-    except requests.exceptions.Timeout:
-        logger.error("Запрос к API тайм-аут!")
-        return "❌ Запрос к сервису занял слишком много времени."
-    
-    except Exception as e:
-        logger.error(f"Ошибка при вызове API: {e}")
-        return "❌ Ошибка обработки запроса AI."
-def get_all_links():
-    response = requests.get(BASE_URL)
-    soup = BeautifulSoup(response.text, "html.parser")
-    
-    links = set()
-    for a_tag in soup.find_all("a", href=True):
-        url = a_tag["href"]
-        if url.startswith("/") or BASE_URL in url:
-            full_url = url if BASE_URL in url else BASE_URL + url
-            links.add(full_url)
-    
-    return list(links)
+    response = requests.post(url, headers=headers, json=data)
+    response_json = response.json()
 
-# 🔹 Функция для парсинга текста со всех страниц
-def get_text_from_all_pages():
-    links = get_all_links()
-    all_text = ""
+    if "choices" in response_json:
+        return response_json["choices"][0]["message"]["content"]
+    else:
+        return f"Ошибка OpenRouter: {response_json.get('error', 'Неизвестная ошибка')}"
 
-    for link in links:
-        try:
-            response = requests.get(link)
-            soup = BeautifulSoup(response.text, "html.parser")
-            page_text = soup.get_text()
-            all_text += f"\n=== {link} ===\n{page_text}\n"
-        except Exception as e:
-            print(f"Ошибка при парсинге {link}: {e}")
-
-    return all_text[:8000]  # Ограничиваем длину для API
-
-site_text = get_text_from_all_pages()
-        
+       
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
