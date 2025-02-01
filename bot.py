@@ -16,7 +16,7 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")  # Telegram API Token
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # URL для вебхука
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # OpenRouter API Token
 
-BASE_URL = "https://www.3DLS.store"
+BASE_URL = "https://raw.githubusercontent.com/letomaneteo/myweb/main/3dls.txt"
 # Установка команд в меню
 def set_bot_commands():
     url = f"https://api.telegram.org/bot{TOKEN}/setMyCommands"
@@ -63,7 +63,7 @@ def get_all_links():
 
 # 🔹 Функция для парсинга текста со всех страниц
 def get_text_from_all_pages():
-    links = get_all_links()[:3]  # Ограничиваем до 3 страниц
+    links = get_all_links()[:1]  # Ограничиваем до 3 страниц
     all_text = ""
 
     for link in links:
@@ -71,7 +71,7 @@ def get_text_from_all_pages():
             response = requests.get(link, timeout=5)  # Ограничиваем время запроса
             soup = BeautifulSoup(response.text, "html.parser")
             page_text = soup.get_text()
-            all_text += f"\n=== {link} ===\n{page_text[:2000]}\n"  # Обрезаем до 2000 символов
+            all_text += f"\n=== {link} ===\n{page_text[:3000]}\n"  # Обрезаем до 2000 символов
         except Exception as e:
             print(f"Ошибка при парсинге {link}: {e}")
 
