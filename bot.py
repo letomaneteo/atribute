@@ -3,6 +3,7 @@ import requests
 import logging
 import json
 import os
+from bs4 import BeautifulSoup
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -74,7 +75,6 @@ def show_menu(chat_id):
 
     send_message(chat_id, "Выберите действие:", reply_markup)
 
-# Обработка сообщений
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -106,6 +106,15 @@ def webhook():
             elif text == "/menu":
                 show_menu(chat_id)  # Показываем кнопки меню
 
+            elif text == "/parse":
+                parsed_data = parse_3dls_page()  # Парсим страницу
+                send_message(chat_id, parsed_data)  # Отправляем пользователю
+
+            elif text == "/parse_ai":
+                parsed_data = parse_3dls_page()  # Парсим
+                ai_response = chat_with_ai(parsed_data)  # Отправляем в ИИ
+                send_message(chat_id, ai_response)  # Ответ ИИ
+
             else:
                 bot_response = chat_with_ai(text)
                 send_message(chat_id, bot_response)
@@ -115,6 +124,25 @@ def webhook():
         logger.error(f"Ошибка обработки webhook: {e}")
         return f"Error: {e}", 500
 
+
+def parse_3dls_page():
+    url = "https://letomaneteo.github.io/myweb/3dls.html"
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return f"Ошибка загрузки страницы: {response.status_code}"
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Допустим, мы хотим извлечь заголовок <h1> и все параграфы <p>
+        title = soup.find("h1").text.strip() if soup.find("h1") else "Без заголовка"
+        paragraphs = [p.text.strip() for p in soup.find_all("p")]
+
+        return f"🔹 Заголовок: {title}\n🔹 Описание: {' '.join(paragraphs[:2])}"  # Ограничим 2 первыми абзацами
+
+    except Exception as e:
+        return f"Ошибка парсинга: {e}"
+        
 def chat_with_ai(user_message):
     url = "https://proxy.tune.app/chat/completions"
     headers = {
