@@ -100,15 +100,15 @@ def webhook():
                     ]
                 }
                 
-                send_message(chat_id, response_text, reply_markup)
-                send_message(chat_id, f"ℹ️ {user_name}, привет, я DeepSeek, я готов тебе ответить!")
+               # send_message(chat_id, response_text, reply_markup)
+               # send_message(chat_id, f"ℹ️ {user_name}, привет, я DeepSeek, я готов тебе ответить!")
 
             elif text == "/menu":
                 show_menu(chat_id)  # Показываем кнопки меню
 
             else:
-                bot_response = chat_with_ai(text)
-                send_message(chat_id, bot_response)
+               # bot_response = chat_with_ai(text)
+               # send_message(chat_id, bot_response)
 
         return "OK", 200
     except Exception as e:
