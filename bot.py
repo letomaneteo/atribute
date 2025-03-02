@@ -100,7 +100,7 @@ def webhook():
                     ]
                 }
                 
-               # send_message(chat_id, response_text, reply_markup)
+               send_message(chat_id, response_text, reply_markup)
                # send_message(chat_id, f"ℹ️ {user_name}, привет, я DeepSeek, я готов тебе ответить!")
 
             elif text == "/menu":
