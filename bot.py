@@ -107,6 +107,8 @@ def webhook():
                 show_menu(chat_id)  # Показываем кнопки меню
 
             else:
+                pass  # Ничего не делать
+
                # bot_response = chat_with_ai(text)
                # send_message(chat_id, bot_response)
 
