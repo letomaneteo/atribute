@@ -94,8 +94,9 @@ def webhook():
                 
                 reply_markup = {
                     "inline_keyboard": [
-                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/menu.html"}}],
-                        [{"text": "🔗Все о web-анимации🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
+                        [{"text": "✨3D меню✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/menu.html"}}],
+                        [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+                        [{"text": "🔗Все о web-анимации (сайт)🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
                         [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
                     ]
                 }
