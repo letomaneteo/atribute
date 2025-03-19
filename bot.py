@@ -64,7 +64,7 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
+            [{"text": "Открыть Бот 1", "url": "https://t.me/AIIdealBot"}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
