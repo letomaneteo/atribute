@@ -63,16 +63,14 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 # Функция обработки команды /menu
 def show_menu(chat_id):
     reply_markup = {
-        "keyboard": [
+        "inline_keyboard": [
             [{"text": "Тест Идеальный бот: реальность против генерации", "url": "https://t.me/AIIdealBot"}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
-        ],
-        "resize_keyboard": True,
-        "one_time_keyboard": False
+        ]
     }
 
-    send_message(chat_id, "Выберите действие:", reply_markup)
+    bot.send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
 
 # Обработка сообщений
 @app.route('/webhook', methods=['POST'])
