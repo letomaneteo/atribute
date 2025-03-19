@@ -61,16 +61,19 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
         logger.error(f"Ошибка при отправке сообщения: {e}")
 
 # Функция обработки команды /menu
-# Функция показа меню с инлайн-кнопками
 def show_menu(chat_id):
     reply_markup = {
-        "inline_keyboard": [
+        "keyboard": [
             [{"text": "Тест Идеальный бот: реальность против генерации", "url": "https://t.me/AIIdealBot"}],
-            [{"text": "✨Шоурумы 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
-            [{"text": "🎮 Игра: Победа в 22 клика 🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
-        ]
+            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
+            [{"text": "Другое действие"}]
+        ],
+        "resize_keyboard": True,  # Автоматически подстраивать клавиатуру
+        "one_time_keyboard": False  # Клавиатура будет доступна, пока не выберешь
     }
-    send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
+    
+    # Важно: здесь бот будет просто показывать клавиатуру в чате
+    bot.send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
 
 # Обработка сообщений
 @app.route('/webhook', methods=['POST'])
