@@ -64,16 +64,15 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "Тест Идеальный бот: реальность против генерации", "url": "https://t.me/AIIdealBot"}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "Другое действие"}]
+            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
+            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
-        "resize_keyboard": True,  # Автоматически подстраивать клавиатуру
-        "one_time_keyboard": False  # Клавиатура будет доступна, пока не выберешь
+        "resize_keyboard": True,
+        "one_time_keyboard": False
     }
-    
-    # Важно: здесь бот будет просто показывать клавиатуру в чате
-    bot.send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
+
+    send_message(chat_id, "Выберите действие:", reply_markup)
 
 # Обработка сообщений
 @app.route('/webhook', methods=['POST'])
