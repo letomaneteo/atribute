@@ -64,7 +64,6 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
 def show_menu(chat_id):
     reply_markup = {
         "keyboard": [
-            [{"text": "Открыть Бот 1", "url": "https://t.me/AIIdealBot"}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
             [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
         ],
@@ -97,7 +96,9 @@ def webhook():
                         [{"text": "✨3D меню✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/menu.html"}}],
                         [{"text": "✨Шоурумы интерактивных 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
                         [{"text": "🔗Все о web-анимации (сайт)🔗", "url": "https://www.3dls.store/анимация-на-сайте"}],
-                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+                        [{"text": "🎮Игра: Победа в 22 клика🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
+                       [{"text": "🤖Тест: Идеальный АИ. Выиграй приз.🤖", "url": "https://t.me/AIIdealBot"}]
+
                     ]
                 }
                 
