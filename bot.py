@@ -61,18 +61,16 @@ def send_message(chat_id, text, reply_markup=None, parse_mode='HTML'):
         logger.error(f"Ошибка при отправке сообщения: {e}")
 
 # Функция обработки команды /menu
+# Функция показа меню с инлайн-кнопками
 def show_menu(chat_id):
     reply_markup = {
-        "keyboard": [
-            [{"text": "Тест Идеальный бот: реальность против генерации"}],
-            [{"text": "Смотреть (тех.работы)", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}],
-            [{"text": "Другое действие"}]
-        ],
-        "resize_keyboard": True,
-        "one_time_keyboard": False
+        "inline_keyboard": [
+            [{"text": "Тест Идеальный бот: реальность против генерации", "url": "https://t.me/AIIdealBot"}],
+            [{"text": "✨Шоурумы 3D товаров✨", "web_app": {"url": "https://letomaneteo.github.io/myweb/page1.html"}}],
+            [{"text": "🎮 Игра: Победа в 22 клика 🎮", "web_app": {"url": "https://letomaneteo.github.io/myweb/newpage.html"}}]
+        ]
     }
-
-    bot.send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
+    send_message(chat_id, "Выберите действие:", reply_markup=reply_markup)
 
 # Обработка сообщений
 @app.route('/webhook', methods=['POST'])
